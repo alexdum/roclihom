@@ -9,7 +9,7 @@ jobs:
   sync-to-hub:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Checkout the repository
+      # Step 1: Checkout the repository with LFS support
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
@@ -19,37 +19,44 @@ jobs:
       - name: Install Git LFS
         run: git lfs install
 
-      # Step 3: Track .nc files with LFS
-      - name: Track .nc files with LFS
-        run: git lfs track "*.nc"
-
-      # Step 4: Pull LFS files (if needed)
-      - name: Pull LFS files
-        run: git lfs pull
-
-      # Step 5: Configure Git user
+      # Step 3: Configure Git user
       - name: Configure Git user
         run: |
           git config --global user.email "your_email@example.com"
           git config --global user.name "Your Name"
 
-      # Step 6: Check for changes (logging step)
-      - name: Check for changes
+      # Step 4: Track .nc files with Git LFS
+      - name: Track .nc files with Git LFS
         run: |
-          git status
-          git lfs ls-files
+          git lfs track "*.nc"
+          git add .gitattributes
+          git commit -m "Configure Git LFS for .nc files" || echo "No changes to .gitattributes"
 
-      # Step 7: Push changes to Hugging Face hub
-      - name: Push to hub
+      # Step 5: Migrate existing large files to Git LFS (if necessary)
+      - name: Migrate existing large files to Git LFS
+        run: |
+          git lfs migrate import --include="www/data/ncs/tcdc.convcld.1981.nc" --force
+
+      # Step 6: Add large files to Git
+      - name: Add large files to Git
+        run: |
+          git add www/data/ncs/tcdc.convcld.1981.nc
+          git commit -m "Add large .nc file with Git LFS" || echo "No changes to large files"
+
+      # Step 7: Verify LFS tracking
+      - name: Verify LFS tracking
+        run: git lfs ls-files
+
+      # Step 8: Push commits to Hugging Face hub
+      - name: Push commits to Hugging Face hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          git add -f .
-          
-          # Check if there are any changes to commit
-          if git diff-index --quiet HEAD --; then
-            echo "No changes to commit"
-          else
-            git commit -m "Update from GitHub Actions"
-            git push https://alexdum:$HF_TOKEN@huggingface.co/spaces/alexdum/roclihom main
-          fi
+          git push https://alexdum:${HF_TOKEN}@huggingface.co/spaces/alexdum/roclihom main
+
+      # Step 9: Push LFS objects to Hugging Face hub
+      - name: Push LFS objects to Hugging Face hub
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git lfs push --all https://alexdum:${HF_TOKEN}@huggingface.co/spaces/alexdum/roclihom main
