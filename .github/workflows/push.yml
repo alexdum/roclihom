@@ -2,7 +2,7 @@
   env:
     HF_TOKEN: ${{ secrets.HF_TOKEN }}
   run: |
-    git add .
+    git add -f .
     
     # Check if there are any changes to commit
     if git diff-index --quiet HEAD --; then
