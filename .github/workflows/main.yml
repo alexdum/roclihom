@@ -15,9 +15,20 @@ jobs:
           fetch-depth: 0
           lfs: true
 
-      # Step 2: Install Git LFS
-      - name: Install Git LFS
-        run: git lfs install
+      # Step 2: Install Latest Git LFS
+      - name: Install Latest Git LFS
+        run: |
+          # Remove any existing Git LFS installation
+          sudo apt-get remove git-lfs || true
+          
+          # Add the Git LFS repository
+          curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+          
+          # Install Git LFS
+          sudo apt-get install git-lfs
+          
+          # Initialize Git LFS
+          git lfs install
 
       # Step 3: Configure Git user
       - name: Configure Git user
@@ -32,6 +43,10 @@ jobs:
           git add .gitattributes
           git commit -m "Configure Git LFS for .nc files" || echo "No changes to .gitattributes"
 
+      # Step 5: Migrate existing large files to Git LFS (if necessary)
+      - name: Migrate existing large files to Git LFS
+        run: |
+          git lfs migrate import --include="www/data/ncs/tcdc.convcld.1981.nc" --everything
 
       # Step 6: Add large files to Git
       - name: Add large files to Git
