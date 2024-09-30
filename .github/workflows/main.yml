@@ -58,25 +58,17 @@ jobs:
       - name: Verify LFS tracking
         run: git lfs ls-files
 
-      # Step 8: Fetch and Merge Remote Changes
-      - name: Fetch and Merge Remote Changes
+      # Step 8: Push commits to Hugging Face hub with Force Push
+      - name: Force Push commits to Hugging Face hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           git remote add hf https://alexdum:${HF_TOKEN}@huggingface.co/spaces/alexdum/roclihom
-          git fetch hf
-          git merge hf/main || git rebase hf/main
+          git push hf main --force
 
-      # Step 9: Push commits to Hugging Face hub
-      - name: Push commits to Hugging Face hub
+      # Step 9: Push LFS objects to Hugging Face hub with Force Push
+      - name: Force Push LFS objects to Hugging Face hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          git push hf main
-
-      # Step 10: Push LFS objects to Hugging Face hub
-      - name: Push LFS objects to Hugging Face hub
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: |
-          git lfs push hf main
+          git lfs push hf main --force
