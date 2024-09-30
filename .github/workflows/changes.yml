@@ -1,4 +1,0 @@
-- name: Check for changes
-  run: |
-    git status
-    git lfs ls-files
