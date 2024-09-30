@@ -32,10 +32,6 @@ jobs:
           git add .gitattributes
           git commit -m "Configure Git LFS for .nc files" || echo "No changes to .gitattributes"
 
-      # Step 5: Migrate existing large files to Git LFS (if necessary)
-      - name: Migrate existing large files to Git LFS
-        run: |
-          git lfs migrate import --include="www/data/ncs/tcdc.convcld.1981.nc" --force
 
       # Step 6: Add large files to Git
       - name: Add large files to Git
