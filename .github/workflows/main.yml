@@ -30,35 +30,35 @@ jobs:
           # Initialize Git LFS
           git lfs install
 
-      # Step 3: Configure Git user
+      # Step 3: Configure Git User
       - name: Configure Git User
         run: |
-          git config --global user.email "your_email@example.com"
-          git config --global user.name "Your Name"
+          git config --global user.email "alexandru.dumitrescu@gmail.com"
+          git config --global user.name "alexdum"
 
-      # Step 4: Track .nc files with Git LFS
+      # Step 4: Track All .nc Files with Git LFS
       - name: Track .nc Files with Git LFS
         run: |
           git lfs track "*.nc"
           git add .gitattributes
-          git commit -m "Configure Git LFS for .nc files" || echo "No changes to .gitattributes"
+          git commit -m "Configure Git LFS for all .nc files" || echo "No changes to .gitattributes"
 
-      # Step 5: Migrate existing large files to Git LFS (if necessary)
-      - name: Migrate Existing Large Files to Git LFS
+      # Step 5: Migrate Existing .nc Files to Git LFS
+      - name: Migrate Existing .nc Files to Git LFS
         run: |
-          git lfs migrate import --include="www/data/ncs/tcdc.convcld.1981.nc" --everything
+          git lfs migrate import --include="*.nc" --everything
 
-      # Step 6: Add large files to Git
-      - name: Add Large Files to Git
+      # Step 6: Add and Commit Any LFS-tracked Files
+      - name: Add and Commit LFS-tracked Files
         run: |
-          git add www/data/ncs/tcdc.convcld.1981.nc
-          git commit -m "Add large .nc file with Git LFS" || echo "No changes to large files"
+          git add .
+          git commit -m "Move .nc files to Git LFS" || echo "No changes to commit"
 
-      # Step 7: Verify LFS tracking
+      # Step 7: Verify LFS Tracking
       - name: Verify LFS Tracking
         run: git lfs ls-files
 
-      # Step 8: Add Hugging Face remote
+      # Step 8: Add Hugging Face Remote
       - name: Add Hugging Face Remote
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
