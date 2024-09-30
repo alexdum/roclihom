@@ -9,11 +9,11 @@ jobs:
   sync-to-hub:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Checkout the repository with LFS support
+      # Step 1: Checkout the repository with full history and LFS support
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 0
-          lfs: true
+          fetch-depth: 0  # Fetch all history
+          lfs: true       # Enable Git LFS
 
       # Step 2: Install Latest Git LFS
       - name: Install Latest Git LFS
@@ -58,16 +58,25 @@ jobs:
       - name: Verify LFS tracking
         run: git lfs ls-files
 
-      # Step 8: Push commits to Hugging Face hub
+      # Step 8: Fetch and Merge Remote Changes
+      - name: Fetch and Merge Remote Changes
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git remote add hf https://alexdum:${HF_TOKEN}@huggingface.co/spaces/alexdum/roclihom
+          git fetch hf
+          git merge hf/main || git rebase hf/main
+
+      # Step 9: Push commits to Hugging Face hub
       - name: Push commits to Hugging Face hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          git push https://alexdum:${HF_TOKEN}@huggingface.co/spaces/alexdum/roclihom main
+          git push hf main
 
-      # Step 9: Push LFS objects to Hugging Face hub
+      # Step 10: Push LFS objects to Hugging Face hub
       - name: Push LFS objects to Hugging Face hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          git lfs push --all https://alexdum:${HF_TOKEN}@huggingface.co/spaces/alexdum/roclihom main
+          git lfs push hf main
