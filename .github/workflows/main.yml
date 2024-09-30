@@ -13,6 +13,20 @@ jobs:
         with:
           fetch-depth: 0
           lfs: true
+      - name: Install Git LFS
+        run: git lfs install
+      - name: Track .nc files with LFS
+        run: git lfs track "*.nc"
+      - name: Pull LFS files
+        run: git lfs pull
+      - name: Configure Git user
+        run: |
+          git config --global user.email "alexandru.dumitrescu@gmail.com"
+          git config --global user.name "alexdum"
       - name: Push to hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git add .
+          git commit -m "Update from GitHub Actions"
+          git push https://alexdum:$HF_TOKEN@huggingface.co/spaces/alexdum/roclihom main
