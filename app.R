@@ -6,8 +6,6 @@ library(ggplot2)
 
 
 
-
-
 df <- readr::read_csv("penguins.csv")
 # Find subset of columns that are suitable for scatter plot
 df_num <- df |> select(where(is.numeric), -Year)
