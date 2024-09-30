@@ -12,60 +12,42 @@ jobs:
       # Step 1: Checkout the repository with full history and LFS support
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Fetch all history to allow for force pushing
-          lfs: true       # Enable Git LFS
+          fetch-depth: 0
+          lfs: true
 
-      # Step 2: Install Latest Git LFS
-      - name: Install Latest Git LFS
-        run: |
-          # Remove any existing Git LFS installation
-          sudo apt-get remove git-lfs || true
-          
-          # Add the Git LFS repository
-          curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
-          
-          # Install Git LFS
-          sudo apt-get install git-lfs
-          
-          # Initialize Git LFS
-          git lfs install
-
-      # Step 3: Configure Git User
+      # Step 2: Configure Git User (necessary for commits)
       - name: Configure Git User
         run: |
           git config --global user.email "alexandru.dumitrescu@gmail.com"
           git config --global user.name "alexdum"
 
-      # Step 4: Track All .nc Files with Git LFS
+      # Step 3: Track .nc Files with Git LFS if not already tracked
       - name: Track .nc Files with Git LFS
         run: |
-          git lfs track "*.nc"
-          git add .gitattributes
-          git commit -m "Configure Git LFS for all .nc files" || echo "No changes to .gitattributes"
+          if ! grep -q "*.nc" .gitattributes; then
+            git lfs track "*.nc"
+            git add .gitattributes
+            git commit -m "Configure Git LFS for all .nc files"
+          fi
 
-      # Step 5: Migrate Existing .nc Files to Git LFS
-      - name: Migrate Existing .nc Files to Git LFS
-        run: |
-          git lfs migrate import --include="*.nc" --everything
-
-      # Step 6: Add and Commit Any LFS-tracked Files
+      # Step 4: Add and Commit Any LFS-tracked Files (only if there are changes)
       - name: Add and Commit LFS-tracked Files
         run: |
           git add .
-          git commit -m "Move .nc files to Git LFS" || echo "No changes to commit"
+          git diff-index --quiet HEAD || git commit -m "Move .nc files to Git LFS"
 
-      # Step 7: Verify LFS Tracking
+      # Step 5: Verify LFS Tracking
       - name: Verify LFS Tracking
         run: git lfs ls-files
 
-      # Step 8: Add Hugging Face Remote
+      # Step 6: Add Hugging Face Remote
       - name: Add Hugging Face Remote
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           git remote add hf https://alexdum:${HF_TOKEN}@huggingface.co/spaces/alexdum/roclihom
 
-      # Step 9: Force Push to Hugging Face Hub
+      # Step 7: Force Push to Hugging Face Hub
       - name: Force Push to Hugging Face Hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
