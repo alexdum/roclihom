@@ -1,4 +1,4 @@
-name: Sync to Hugging Face hub
+name: Sync to Hugging Face Hub
 
 on:
   push:
@@ -12,7 +12,7 @@ jobs:
       # Step 1: Checkout the repository with full history and LFS support
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Fetch all history
+          fetch-depth: 0  # Fetch all history to allow for force pushing
           lfs: true       # Enable Git LFS
 
       # Step 2: Install Latest Git LFS
@@ -31,44 +31,43 @@ jobs:
           git lfs install
 
       # Step 3: Configure Git user
-      - name: Configure Git user
+      - name: Configure Git User
         run: |
           git config --global user.email "your_email@example.com"
           git config --global user.name "Your Name"
 
       # Step 4: Track .nc files with Git LFS
-      - name: Track .nc files with Git LFS
+      - name: Track .nc Files with Git LFS
         run: |
           git lfs track "*.nc"
           git add .gitattributes
           git commit -m "Configure Git LFS for .nc files" || echo "No changes to .gitattributes"
 
       # Step 5: Migrate existing large files to Git LFS (if necessary)
-      - name: Migrate existing large files to Git LFS
+      - name: Migrate Existing Large Files to Git LFS
         run: |
           git lfs migrate import --include="www/data/ncs/tcdc.convcld.1981.nc" --everything
 
       # Step 6: Add large files to Git
-      - name: Add large files to Git
+      - name: Add Large Files to Git
         run: |
           git add www/data/ncs/tcdc.convcld.1981.nc
           git commit -m "Add large .nc file with Git LFS" || echo "No changes to large files"
 
       # Step 7: Verify LFS tracking
-      - name: Verify LFS tracking
+      - name: Verify LFS Tracking
         run: git lfs ls-files
 
-      # Step 8: Push commits to Hugging Face hub with Force Push
-      - name: Force Push commits to Hugging Face hub
+      # Step 8: Add Hugging Face remote
+      - name: Add Hugging Face Remote
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           git remote add hf https://alexdum:${HF_TOKEN}@huggingface.co/spaces/alexdum/roclihom
-          git push hf main --force
 
-      # Step 9: Push LFS objects to Hugging Face hub with Force Push
-      - name: Force Push LFS objects to Hugging Face hub
+      # Step 9: Force Push to Hugging Face Hub
+      - name: Force Push to Hugging Face Hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          git lfs push hf main --force
+          git push hf main --force
