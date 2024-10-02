@@ -5,7 +5,11 @@ WORKDIR /code
 # Install stable packages from CRAN
 RUN install2.r --error \
     ggExtra \
-    shiny
+    shiny \
+    leaflet \
+    leaflet.extras \
+    arrow \
+    dplyr
 
 # Install development packages from GitHub
 RUN installGithub.r \
