@@ -5,7 +5,7 @@ library(leaflet)
 # Define the UI using bslib for a modern layout
 page_sidebar(
   
-  theme = bs_theme(version = 5, bootswatch = "flatly"),
+  theme = bs_theme(version = 5, bootswatch = "cosmo"),
   
   
   sidebar = sidebar(
