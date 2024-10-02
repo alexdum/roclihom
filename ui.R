@@ -5,30 +5,43 @@ library(leaflet)
 # Define the UI using bslib for a modern layout
 shinyUI(fluidPage(
   
-  # Use bslib for a modern Bootstrap 5 theme
-  theme = bs_theme(version = 5, bootswatch = "flatly"),  # You can choose different bootswatch themes
+  theme = bs_theme(version = 5, bootswatch = "flatly"),
   
-  # Title of the application
-  titlePanel("Interactive Map with Altitude Filter"),
+  titlePanel("Interactive Map with Altitude and Data Filters"),
   
-  # Sidebar layout with a slider input for altitude range
   sidebarLayout(
-    
-    # Sidebar panel for inputs
     sidebarPanel(
-      # Slider input for filtering by altitude (initialized without min/max)
       sliderInput(
         inputId = "altitudeRange",
         label = "Altitude Range (m):",
-        min = 0, max = 500, 
-        value = c(0, 500),  # Default range, will be updated dynamically
+        min = 0, max = 2504, 
+        value = c(0, 2504),
+        step = 1
+      ),
+      selectInput(
+        inputId = "variable",
+        label = "Variable:",
+        choices = c("PREC", "Tavg", "Tmin", "Tmax"),
+        selected = "PREC"
+      ),
+      numericInput(
+        inputId = "year",
+        label = "Year:",
+        value = 1901,
+        min = 1901,
+        max = 2023,
+        step = 1
+      ),
+      numericInput(
+        inputId = "month",
+        label = "Month:",
+        value = 1,
+        min = 1,
+        max = 12,
         step = 1
       )
     ),
-    
-    # Main panel for displaying outputs
     mainPanel(
-      # Leaflet output to display the map
       leafletOutput("map", height = 600)
     )
   )
