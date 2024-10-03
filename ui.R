@@ -1,9 +1,24 @@
+library(shiny)
+library(bslib)
+library(leaflet)
+
 # Define the UI using bslib for a modern layout
 page_sidebar(
   
   theme = bs_theme(version = 5, bootswatch = "cosmo"),
   
   sidebar = sidebar(
+    
+    # Display the selected station name dynamically
+    h3(textOutput("selected_station_name")), 
+    
+    # Dropdown to select station by name
+    selectInput(
+      inputId = "stationSelect",
+      label = "Select Station by Name:",
+      choices = NULL,  # Choices will be populated dynamically
+      selected = NULL
+    ),
     
     sliderInput(
       inputId = "altitudeRange",

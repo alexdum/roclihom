@@ -1,11 +1,9 @@
-library(shiny)
-library(leaflet)
-library(leaflet.extras)
-library(arrow)
-library(dplyr)
-library(ggplot2)
-
 shinyServer(function(input, output, session) {
+  
+  # Populate the selectInput with station names dynamically
+  observe({
+    updateSelectInput(session, "stationSelect", choices = sort(unique(combined_data$name)))
+  })
   
   # Calculate the bounds of the data
   map_bounds <- list(
@@ -15,11 +13,60 @@ shinyServer(function(input, output, session) {
     lat_max = max(meta$latitude, na.rm = TRUE)
   )
   
-  # Initialize a reactive value to store the clicked station ID
-  selected_station_id <- reactiveVal(sample(combined_data$id, 1))
+  # Initialize a reactive value to store the clicked or selected station ID
+  selected_station_id <- reactiveVal(NULL)
+  
+  # Update the selected station ID based on the dropdown selection
+  observeEvent(input$stationSelect, {
+    print(combined_data)
+    selected_station <- combined_data %>%
+      filter(name == input$stationSelect) %>%
+      pull(id)
+    
+  
+    # Ensure we select only the first ID if multiple values are returned
+    if (length(selected_station) > 0) {
+      selected_station_id(selected_station[1])  # Select the first ID
+    }
+  })
+  
+  # Listen for click events on the map markers
+  observeEvent(input$map_marker_click, {
+    clicked_station <- input$map_marker_click$id
+    
+    if (!is.null(clicked_station)) {
+      selected_station_id(clicked_station)
+      
+      # Also update the dropdown to reflect the selected station
+      selected_station_name <- combined_data %>%
+        filter(id == clicked_station) %>%
+        pull(name)
+      
+      updateSelectInput(session, "stationSelect", selected = selected_station_name)
+    }
+  })
+  
+  # Display the selected station name in the sidebar
+  output$selected_station_name <- renderText({
+    # Check if a station is selected, if not display a default message
+    if (is.null(selected_station_id())) {
+      return("No station selected")
+    }
+    
+    station_data <- combined_data %>% filter(id == selected_station_id())
+    
+    if (nrow(station_data) > 0) {
+      return(paste("Selected Station:", station_data$name[1]))
+    } else {
+      return("No station selected")
+    }
+  })
   
   # Reactive expression to filter the combined data and calculate multi-annual means based on the selected aggregation
   filtered_data <- reactive({
+    # Ensure a station ID is selected before filtering
+    req(selected_station_id())
+    
     year_range <- input$yearRange  # Get the selected year range
     agg_type <- input$aggregation  # Get the selected aggregation type (Monthly, Seasonal, Annual)
     
@@ -65,11 +112,11 @@ shinyServer(function(input, output, session) {
   
   # Reactive expression to filter the time series data for the selected station, variable, and time aggregation
   time_series_data <- reactive({
-    req(selected_station_id())  # Ensure a station is selected
+    # Ensure that a station ID is selected before proceeding
+    req(selected_station_id())
     
     year_range <- input$yearRange
     agg_type <- input$aggregation
-   
     
     data_filtered <- combined_data %>%
       filter(
@@ -149,35 +196,6 @@ shinyServer(function(input, output, session) {
       )
   })
   
-  # Listen for click events on the map markers
-  observeEvent(input$map_marker_click, {
-    clicked_station <- input$map_marker_click$id
-    
-    if (!is.null(clicked_station)) {
-      selected_station_id(clicked_station)
-      
-      # Optionally, print the station ID in the console for debugging
-      print(paste("Clicked station ID:", clicked_station))
-    }
-  })
-  
-  # Display information about the selected station and update when input$variable changes
-  observe({
-    if (!is.null(selected_station_id())) {
-      specific_data <- filtered_data() %>% filter(id == selected_station_id())
-      
-      output$station_name_output <- renderText({
-        if (nrow(specific_data) > 0) {
-          paste("Selected Station:", specific_data$name[1],
-                "<br>ID:", specific_data$id[1],
-                "<br>Altitude:", specific_data$altitude[1], "m",
-                "<br>Multi-annual Value (", input$variable, "):", round(specific_data$multi_annual_value[1], 2))
-        } else {
-          "No data available for the selected station and variable."
-        }
-      })
-    }
-  })
   
   # Render the time series plot
   output$time_series_plot <- renderPlot({
@@ -209,6 +227,24 @@ shinyServer(function(input, output, session) {
         labs(title = paste("Annual Time Series for", input$variable),
              x = "Year", y = paste(input$variable, "Value")) +
         theme_minimal()
+    }
+  })
+  
+  # Display information about the selected station and update when input$variable changes
+  observe({
+    if (!is.null(selected_station_id())) {
+      specific_data <- filtered_data() %>% filter(id == selected_station_id())
+      
+      output$station_name_output <- renderText({
+        if (nrow(specific_data) > 0) {
+          paste("Selected Station:", specific_data$name[1],
+                "<br>ID:", specific_data$id[1],
+                "<br>Altitude:", specific_data$altitude[1], "m",
+                "<br>Multi-annual Value (", input$variable, "):", round(specific_data$multi_annual_value[1], 2))
+        } else {
+          "No data available for the selected station and variable."
+        }
+      })
     }
   })
   
