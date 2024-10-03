@@ -4,6 +4,8 @@ library(leaflet)
 library(leaflet.extras)
 library(arrow)
 library(dplyr)
+library(ggplot2)  # For creating the time series plot
+
 
 
 # Load the meta data

@@ -1,7 +1,3 @@
-library(shiny)
-library(bslib)
-library(leaflet)
-
 # Define the UI using bslib for a modern layout
 page_sidebar(
   
@@ -60,7 +56,7 @@ page_sidebar(
         inputId = "season",
         label = "Season:",
         choices = c("DJF", "MAM", "JJA", "SON"),
-        selected = "JJA"
+        selected = "DJF"
       )
     )
   ),
@@ -68,7 +64,7 @@ page_sidebar(
     card_header(
       textOutput("station_name_output")  # Display selected station details
     ), 
-    leafletOutput("map", height = 600)
+    leafletOutput("map", height = 600),
+    plotOutput("time_series_plot")  # Add time series plot below the map
   )
-  
 )

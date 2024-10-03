@@ -1,3 +1,10 @@
+library(shiny)
+library(leaflet)
+library(leaflet.extras)
+library(arrow)
+library(dplyr)
+library(ggplot2)
+
 shinyServer(function(input, output, session) {
   
   # Calculate the bounds of the data
@@ -18,9 +25,9 @@ shinyServer(function(input, output, session) {
     
     data_filtered <- combined_data %>%
       filter(
-        altitude >= input$altitudeRange[1], 
+        altitude >= input$altitudeRange[1],
         altitude <= input$altitudeRange[2],
-        variable == input$variable, 
+        variable == input$variable,
         year >= year_range[1],  # Filter for the selected year range
         year <= year_range[2]
       )
@@ -56,6 +63,57 @@ shinyServer(function(input, output, session) {
     return(data_filtered)
   })
   
+  # Reactive expression to filter the time series data for the selected station, variable, and time aggregation
+  time_series_data <- reactive({
+    req(selected_station_id())  # Ensure a station is selected
+    
+    year_range <- input$yearRange
+    agg_type <- input$aggregation
+   
+    
+    data_filtered <- combined_data %>%
+      filter(
+        id == selected_station_id(),
+        variable == input$variable,
+        year >= year_range[1],
+        year <= year_range[2]
+      )
+    
+    if (agg_type == "Monthly") {
+      # Return raw monthly data for the selected station
+      return(
+        data_filtered %>%
+          filter(month == input$month) |>
+          select(year, month, value) %>%
+          arrange(year, month)
+      )
+      
+    } else if (agg_type == "Seasonal") {
+      # Group by season and calculate seasonal averages
+      data_filtered <- data_filtered %>%
+        mutate(season = case_when(
+          month %in% c(12, 1, 2) ~ "DJF",
+          month %in% c(3, 4, 5) ~ "MAM",
+          month %in% c(6, 7, 8) ~ "JJA",
+          month %in% c(9, 10, 11) ~ "SON"
+        )) %>%
+        group_by(year, season) %>%
+        summarise(value = mean(value, na.rm = TRUE), .groups = "drop") %>%
+        filter(season == input$season) %>%
+        arrange(year)
+      return(data_filtered)
+      
+    } else if (agg_type == "Annual") {
+      # Group by year and calculate annual averages
+      return(
+        data_filtered %>%
+          group_by(year) %>%
+          summarise(value = mean(value, na.rm = TRUE), .groups = "drop") %>%
+          arrange(year)
+      )
+    }
+  })
+  
   # Render the Leaflet map
   output$map <- renderLeaflet({
     center_lat <- (map_bounds$lat_min + map_bounds$lat_max) / 2
@@ -79,9 +137,9 @@ shinyServer(function(input, output, session) {
     leafletProxy("map", data = filtered_data()) %>%
       clearMarkers() %>%
       addCircleMarkers(
-        lng = ~longitude, lat = ~latitude, 
-        popup = ~paste0("<strong>Name: </strong>", name, 
-                        "<br><strong>ID: </strong>", id, 
+        lng = ~longitude, lat = ~latitude,
+        popup = ~paste0("<strong>Name: </strong>", name,
+                        "<br><strong>ID: </strong>", id,
                         "<br><strong>Altitude: </strong>", altitude, " m",
                         "<br><strong>Multi-annual Value (", input$variable, "): </strong>", round(multi_annual_value, 2)),
         radius = 5,
@@ -110,14 +168,47 @@ shinyServer(function(input, output, session) {
       
       output$station_name_output <- renderText({
         if (nrow(specific_data) > 0) {
-          paste("Selected Station:", specific_data$name[1], 
-                "<br>ID:", specific_data$id[1], 
-                "<br>Altitude:", specific_data$altitude[1], "m", 
+          paste("Selected Station:", specific_data$name[1],
+                "<br>ID:", specific_data$id[1],
+                "<br>Altitude:", specific_data$altitude[1], "m",
                 "<br>Multi-annual Value (", input$variable, "):", round(specific_data$multi_annual_value[1], 2))
         } else {
           "No data available for the selected station and variable."
         }
       })
+    }
+  })
+  
+  # Render the time series plot
+  output$time_series_plot <- renderPlot({
+    # Ensure that time series data is available
+    req(time_series_data())
+    
+    # Get the filtered time series data
+    ts_data <- time_series_data()
+    
+    # Generate the plot based on the selected aggregation type
+    if (input$aggregation == "Monthly") {
+      ggplot(ts_data, aes(x = as.Date(paste(year, month, "01", sep = "-")), y = value)) +
+        geom_line(color = "blue") +
+        labs(title = paste("Monthly Time Series for", input$variable),
+             x = "Date", y = paste(input$variable, "Value")) +
+        scale_x_date(date_labels = "%Y-%m", date_breaks = "1 year") +
+        theme_minimal()
+      
+    } else if (input$aggregation == "Seasonal") {
+      ggplot(ts_data, aes(x = year, y = value)) +
+        geom_line(color = "green") +
+        labs(title = paste("Seasonal Time Series (", input$season, ") for", input$variable),
+             x = "Year", y = paste(input$variable, "Value")) +
+        theme_minimal()
+      
+    } else if (input$aggregation == "Annual") {
+      ggplot(ts_data, aes(x = year, y = value)) +
+        geom_line(color = "red") +
+        labs(title = paste("Annual Time Series for", input$variable),
+             x = "Year", y = paste(input$variable, "Value")) +
+        theme_minimal()
     }
   })
   
