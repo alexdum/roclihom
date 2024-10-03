@@ -130,7 +130,7 @@ shinyServer(function(input, output, session) {
           month %in% c(9, 10, 11) ~ "SON"
         )) %>%
         group_by(year, season) %>%
-        summarise(value = mean(value, na.rm = TRUE), .groups = "drop") %>%
+        summarise(value = if (input$variable == "PREC") sum(value, na.rm = TRUE) else mean(value, na.rm = TRUE), .groups = "drop") %>%
         filter(season == input$season) %>%
         arrange(year)
       return(data_filtered)
@@ -140,7 +140,7 @@ shinyServer(function(input, output, session) {
       return(
         data_filtered %>%
           group_by(year) %>%
-          summarise(value = mean(value, na.rm = TRUE), .groups = "drop") %>%
+          summarise(value = if (input$variable == "PREC") sum(value, na.rm = TRUE) else mean(value, na.rm = TRUE), .groups = "drop") %>%
           arrange(year)
       )
     }
