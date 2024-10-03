@@ -45,12 +45,6 @@ shinyServer(function(input, output, session) {
     }
   })
   
-  # Display the selected station name in the sidebar
-  output$selected_station_name <- renderText({
-    # Check if a station is selected, if not display a default message
-    if (is.null(selected_station_id())) {
-      return("No station selected")
-    }
     
     station_data <- combined_data %>% filter(id == selected_station_id())
     

@@ -9,9 +9,6 @@ page_sidebar(
   
   sidebar = sidebar(
     
-    # Display the selected station name dynamically
-    h3(textOutput("selected_station_name")), 
-    
     # Dropdown to select station by name
     selectInput(
       inputId = "stationSelect",
