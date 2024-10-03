@@ -1,12 +1,7 @@
-library(shiny)
-library(bslib)
-library(leaflet)
-
 # Define the UI using bslib for a modern layout
 page_sidebar(
   
   theme = bs_theme(version = 5, bootswatch = "cosmo"),
-  
   
   sidebar = sidebar(
     
@@ -23,14 +18,16 @@ page_sidebar(
       choices = c("PREC", "Tavg", "Tmin", "Tmax"),
       selected = "PREC"
     ),
-    numericInput(
-      inputId = "year",
-      label = "Year:",
-      value = 1901,
-      min = 1901,
-      max = 2023,
+    
+    # Add a slider input to select the year range
+    sliderInput(
+      inputId = "yearRange",
+      label = "Year Range:",
+      min = 1901, max = 2023,
+      value = c(1901, 2023),
       step = 1
     ),
+    
     numericInput(
       inputId = "month",
       label = "Month:",
@@ -42,7 +39,7 @@ page_sidebar(
   ),
   card(
     card_header(
-    textOutput("station_name_output")  # Display selected station details
+      textOutput("station_name_output")  # Display selected station details
     ), 
     leafletOutput("map", height = 600)
   )
