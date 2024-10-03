@@ -210,7 +210,7 @@ shinyServer(function(input, output, session) {
         geom_line(color = "blue") +
         labs(title = paste("Monthly Time Series for", input$variable),
              x = "Date", y = paste(input$variable, "Value")) +
-        scale_x_date(date_labels = "%Y-%m", date_breaks = "1 year") +
+        scale_x_date(date_labels = "%Y-%m") +
         theme_minimal()
       
     } else if (input$aggregation == "Seasonal") {
