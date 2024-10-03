@@ -4,7 +4,7 @@ WORKDIR /code
 
 # Install stable packages from CRAN
 RUN install2.r --error \
-    ggExtra \
+    ggplot2 \
     shiny \
     leaflet \
     leaflet.extras \
