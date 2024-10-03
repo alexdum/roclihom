@@ -18,7 +18,6 @@ shinyServer(function(input, output, session) {
   
   # Update the selected station ID based on the dropdown selection
   observeEvent(input$stationSelect, {
-    print(combined_data)
     selected_station <- combined_data %>%
       filter(name == input$stationSelect) %>%
       pull(id)
@@ -65,7 +64,7 @@ shinyServer(function(input, output, session) {
   # Reactive expression to filter the combined data and calculate multi-annual means based on the selected aggregation
   filtered_data <- reactive({
     # Ensure a station ID is selected before filtering
-    req(selected_station_id())
+    #req(selected_station_id())
     
     year_range <- input$yearRange  # Get the selected year range
     agg_type <- input$aggregation  # Get the selected aggregation type (Monthly, Seasonal, Annual)
