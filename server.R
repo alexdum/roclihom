@@ -1,8 +1,5 @@
 shinyServer(function(input, output, session) {
   
-  # Join the data with meta based on id
-  combined_data <- data %>%
-    left_join(meta, by = "id")
   
   # Calculate the bounds of the data
   map_bounds <- list(
@@ -74,18 +71,23 @@ shinyServer(function(input, output, session) {
     }
   })
   
-  # Display information about the initially selected random station or the clicked station
+  # Display information about the selected station (random or clicked) and update when input$variable changes
   observe({
     if (!is.null(selected_station_id())) {
-      # Get the data for the selected station
-      specific_data <- combined_data %>% filter(id == selected_station_id())
+      # Get the data for the selected station and the selected variable
+      specific_data <- combined_data %>% 
+        filter(id == selected_station_id(), variable == input$variable, month == input$month)  # Add variable filtering
       
-      # Update the output with the station details
+      # Update the output with the station details, including the value for the selected variable
       output$station_name_output <- renderText({
-        paste("Selected Station:", specific_data$name[1], 
-              "<br>ID:", specific_data$id[1], 
-              "<br>Altitude:", specific_data$altitude[1], "m", 
-              "<br>Value:", specific_data$value[1])
+        if (nrow(specific_data) > 0) {
+          paste("Selected Station:", specific_data$name[1], 
+                "<br>ID:", specific_data$id[1], 
+                "<br>Altitude:", specific_data$altitude[1], "m", 
+                "<br>Value (", input$variable, "):", specific_data$value[1])
+        } else {
+          "No data available for the selected station and variable."
+        }
       })
     }
   })
