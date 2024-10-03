@@ -1,3 +1,7 @@
+library(shiny)
+library(bslib)
+library(leaflet)
+
 # Define the UI using bslib for a modern layout
 page_sidebar(
   
@@ -28,13 +32,36 @@ page_sidebar(
       step = 1
     ),
     
-    numericInput(
-      inputId = "month",
-      label = "Month:",
-      value = 1,
-      min = 1,
-      max = 12,
-      step = 1
+    # Add a selectInput to choose the aggregation level (Monthly, Seasonal, Annual)
+    selectInput(
+      inputId = "aggregation",
+      label = "Aggregation:",
+      choices = c("Monthly", "Seasonal", "Annual"),
+      selected = "Monthly"
+    ),
+    
+    # Numeric input for the month (only shown for monthly aggregation)
+    conditionalPanel(
+      condition = "input.aggregation == 'Monthly'",
+      numericInput(
+        inputId = "month",
+        label = "Month:",
+        value = 1,
+        min = 1,
+        max = 12,
+        step = 1
+      )
+    ),
+    
+    # Select input for selecting season (only shown for seasonal aggregation)
+    conditionalPanel(
+      condition = "input.aggregation == 'Seasonal'",
+      selectInput(
+        inputId = "season",
+        label = "Season:",
+        choices = c("DJF", "MAM", "JJA", "SON"),
+        selected = "JJA"
+      )
     )
   ),
   card(

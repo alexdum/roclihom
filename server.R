@@ -11,24 +11,49 @@ shinyServer(function(input, output, session) {
   # Initialize a reactive value to store the clicked station ID
   selected_station_id <- reactiveVal(sample(combined_data$id, 1))
   
-  # Reactive expression to filter the combined data based on inputs and calculate multi-annual monthly averages
+  # Reactive expression to filter the combined data and calculate multi-annual means based on the selected aggregation
   filtered_data <- reactive({
     year_range <- input$yearRange  # Get the selected year range
+    agg_type <- input$aggregation  # Get the selected aggregation type (Monthly, Seasonal, Annual)
     
-    combined_data %>%
-      dplyr::filter(
+    data_filtered <- combined_data %>%
+      filter(
         altitude >= input$altitudeRange[1], 
         altitude <= input$altitudeRange[2],
         variable == input$variable, 
         year >= year_range[1],  # Filter for the selected year range
-        year <= year_range[2],
-        month == input$month
-      ) %>%
-      group_by(id, name, latitude, longitude, altitude) %>%
-      summarise(
-        multi_annual_value = mean(value, na.rm = TRUE)  # Compute the multi-annual monthly average
-      ) %>%
-      ungroup()
+        year <= year_range[2]
+      )
+    
+    # Calculate multi-annual means based on the selected aggregation type
+    if (agg_type == "Monthly") {
+      # Filter by the selected month and compute monthly multi-annual means
+      data_filtered <- data_filtered %>%
+        filter(month == input$month) %>%
+        group_by(id, name, latitude, longitude, altitude) %>%
+        summarise(multi_annual_value = mean(value, na.rm = TRUE), .groups = "drop")
+      
+    } else if (agg_type == "Seasonal") {
+      # Define the seasons (DJF, MAM, JJA, SON)
+      data_filtered <- data_filtered %>%
+        mutate(season = case_when(
+          month %in% c(12, 1, 2) ~ "DJF",
+          month %in% c(3, 4, 5) ~ "MAM",
+          month %in% c(6, 7, 8) ~ "JJA",
+          month %in% c(9, 10, 11) ~ "SON"
+        )) %>%
+        filter(season == input$season) %>%  # Filter by the selected season
+        group_by(id, name, latitude, longitude, altitude) %>%
+        summarise(multi_annual_value = mean(value, na.rm = TRUE), .groups = "drop")
+      
+    } else if (agg_type == "Annual") {
+      # Compute annual multi-annual means
+      data_filtered <- data_filtered %>%
+        group_by(id, name, latitude, longitude, altitude) %>%
+        summarise(multi_annual_value = mean(value, na.rm = TRUE), .groups = "drop")
+    }
+    
+    return(data_filtered)
   })
   
   # Render the Leaflet map
