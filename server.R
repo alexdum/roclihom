@@ -45,15 +45,7 @@ shinyServer(function(input, output, session) {
     }
   })
   
-    
-    station_data <- combined_data %>% filter(id == selected_station_id())
-    
-    if (nrow(station_data) > 0) {
-      return(paste("Selected Station:", station_data$name[1]))
-    } else {
-      return("No station selected")
-    }
-  })
+
   
   # Reactive expression to filter the combined data and calculate multi-annual means based on the selected aggregation
   filtered_data <- reactive({

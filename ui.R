@@ -9,6 +9,8 @@ page_sidebar(
   
   sidebar = sidebar(
     
+
+    
     # Dropdown to select station by name
     selectInput(
       inputId = "stationSelect",
