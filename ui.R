@@ -79,7 +79,7 @@ page_sidebar(
     card_header(
       textOutput("station_name_output")  # Display selected station details
     ), 
-    leafletOutput("map", height = 600),
-    plotOutput("time_series_plot")  # Add time series plot below the map
+    leafletOutput("map", height = 300),
+    plotOutput("time_series_plot", height = 150)  # Add time series plot below the map
   )
 )
