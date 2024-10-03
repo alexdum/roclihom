@@ -41,6 +41,9 @@ page_sidebar(
     )
   ),
   card(
+    card_header(
+    textOutput("station_name_output")  # Display selected station details
+    ), 
     leafletOutput("map", height = 600)
   )
   

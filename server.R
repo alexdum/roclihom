@@ -1,4 +1,3 @@
-# Define server logic
 shinyServer(function(input, output, session) {
   
   # Join the data with meta based on id
@@ -13,16 +12,17 @@ shinyServer(function(input, output, session) {
     lat_max = max(meta$latitude, na.rm = TRUE)
   )
   
- 
-  # Reactive expression to filter the combined data based on inputs
+  # Initialize a reactive value to store the clicked station ID
+  # Start with a random station ID at the beginning
+  selected_station_id <- reactiveVal(sample(combined_data$id, 1))
+  
+  # Reactive expression to filter the combined data based on inputs (but not based on station click)
   filtered_data <- reactive({
-    
     combined_data %>%
       dplyr::filter(altitude >= input$altitudeRange[1], altitude <= input$altitudeRange[2],
-             variable == input$variable, 
-             year == input$year, 
-             month == input$month)
-    
+                    variable == input$variable, 
+                    year == input$year, 
+                    month == input$month)
   })
   
   # Render the Leaflet map
@@ -45,7 +45,6 @@ shinyServer(function(input, output, session) {
   
   # Observe the filtered data and update the map accordingly
   observe({
-    
     leafletProxy("map", data = filtered_data()) %>%
       clearMarkers() %>%
       addCircleMarkers(
@@ -56,7 +55,38 @@ shinyServer(function(input, output, session) {
                         "<br><strong>Value: </strong>", value),
         radius = 5,
         color = ~colorNumeric("viridis", value)(value),
-        fillOpacity = 0.7
+        fillOpacity = 0.7,
+        layerId = ~id  # Set the layer ID to the station ID for click events
       )
+  })
+  
+  # Listen for click events on the map markers
+  observeEvent(input$map_marker_click, {
+    # Get the clicked station's ID
+    clicked_station <- input$map_marker_click$id
+    
+    if (!is.null(clicked_station)) {
+      # Update the reactive value with the clicked station ID
+      selected_station_id(clicked_station)
+      
+      # Optionally, print the station ID in the console for debugging
+      print(paste("Clicked station ID:", clicked_station))
+    }
+  })
+  
+  # Display information about the initially selected random station or the clicked station
+  observe({
+    if (!is.null(selected_station_id())) {
+      # Get the data for the selected station
+      specific_data <- combined_data %>% filter(id == selected_station_id())
+      
+      # Update the output with the station details
+      output$station_name_output <- renderText({
+        paste("Selected Station:", specific_data$name[1], 
+              "<br>ID:", specific_data$id[1], 
+              "<br>Altitude:", specific_data$altitude[1], "m", 
+              "<br>Value:", specific_data$value[1])
+      })
+    }
   })
 })
