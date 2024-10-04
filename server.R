@@ -255,7 +255,10 @@ shinyServer(function(input, output, session) {
         labs(title = paste("Monthly", input$variable, "Time Series", month.abb[input$month], "for", ts_data_name),
              x = NULL, y = y_axis_label) +
         scale_x_continuous(breaks = x_breaks) +  # Set x-axis breaks
-        theme_minimal()
+        theme_minimal()+
+        theme(
+          plot.title = element_text(size = 10.5)
+        )
       
     } else if (input$aggregation == "Seasonal") {
       p <- ggplot(ts_data, aes(x = year, y = value)) +
@@ -263,7 +266,10 @@ shinyServer(function(input, output, session) {
         labs(title = paste0("Seasonal ", input$variable, " Time Series (", input$season, ") for ", ts_data_name),
              x = NULL, y = y_axis_label) +
         scale_x_continuous(breaks = x_breaks) +
-        theme_minimal()
+        theme_minimal()+
+        theme(
+          plot.title = element_text(size = 10.5)
+        )
       
     } else if (input$aggregation == "Annual") {
       p <- ggplot(ts_data, aes(x = year, y = value)) +
@@ -271,7 +277,10 @@ shinyServer(function(input, output, session) {
         labs(title = paste("Annual", input$variable, "Time Series for", ts_data_name),
              x = NULL, y = y_axis_label) +
         scale_x_continuous(breaks = x_breaks) +
-        theme_minimal()
+        theme_minimal() +
+        theme(
+          plot.title = element_text(size = 10.5)
+        )
     }
     
     # Convert the ggplot object to a Plotly object for interactivity
