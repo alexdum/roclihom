@@ -126,7 +126,7 @@ shinyServer(function(input, output, session) {
       return(
         data_filtered %>%
           filter(month == input$month) |>
-          select(year, month, value) %>%
+          select(name, year, month, value) %>%
           arrange(year, month)
       )
       
@@ -139,7 +139,7 @@ shinyServer(function(input, output, session) {
           month %in% c(6, 7, 8) ~ "JJA",
           month %in% c(9, 10, 11) ~ "SON"
         )) %>%
-        group_by(year, season) %>%
+        group_by(name, year, season) %>%
         summarise(value = if (input$variable == "PREC") sum(value, na.rm = TRUE) else mean(value, na.rm = TRUE), .groups = "drop") %>%
         filter(season == input$season) %>%
         arrange(year)
@@ -149,7 +149,7 @@ shinyServer(function(input, output, session) {
       # Group by year and calculate annual averages
       return(
         data_filtered %>%
-          group_by(year) %>%
+          group_by(name, year) %>%
           summarise(value = if (input$variable == "PREC") sum(value, na.rm = TRUE) else mean(value, na.rm = TRUE), .groups = "drop") %>%
           arrange(year)
       )
@@ -199,6 +199,7 @@ shinyServer(function(input, output, session) {
     
     # Get the filtered time series data
     ts_data <- time_series_data()
+    ts_data_name <- unique(ts_data$name)
     
     # Define the color based on the variable
     line_color <- if (input$variable == "PREC") {
@@ -219,21 +220,21 @@ shinyServer(function(input, output, session) {
     if (input$aggregation == "Monthly") {
       p <- ggplot(ts_data, aes(x = year, y = value)) +
         geom_line(color = line_color) +
-        labs(title = paste("Monthly Time Series",  month.abb[input$month], "for", input$variable),
+        labs(title = paste("Monthly",input$variable,"Time Series",  month.abb[input$month], "for", ts_data_name),
         x = NULL, y = y_axis_label) +
         theme_minimal()
       
     } else if (input$aggregation == "Seasonal") {
       p <- ggplot(ts_data, aes(x = year, y = value)) +
         geom_line(color = line_color) +
-        labs(title = paste0("Seasonal Time Series (", input$season, ") for ", input$variable),
+        labs(title = paste0("Seasonal ", input$variable, " Time Series (", input$season, ") for ", ts_data_name),
         x = NULL, y = y_axis_label) +
         theme_minimal()
       
     } else if (input$aggregation == "Annual") {
       p <- ggplot(ts_data, aes(x = year, y = value)) +
         geom_line(color = line_color) +
-        labs(title = paste("Annual Time Series for", input$variable),
+        labs(title = paste("Annual", input$variable, "Time Series for", ts_data_name),
         x = NULL, y = y_axis_label) +
         theme_minimal()
     }
