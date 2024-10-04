@@ -7,7 +7,7 @@ library(dplyr)
 library(ggplot2) 
 library(plotly)
 
-
+source("utils/get_color_palette.R", local = T)
 
 # Load the meta data
 meta <- read_parquet("www/data/tabs/roclihom_meta_1901_2023.parquet")

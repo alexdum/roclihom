@@ -1,3 +1,10 @@
+library(shiny)
+library(leaflet)
+library(dplyr)
+library(plotly)
+library(ggplot2)
+library(RColorBrewer)
+
 shinyServer(function(input, output, session) {
   
   # Populate the selectInput with station names dynamically
@@ -22,7 +29,6 @@ shinyServer(function(input, output, session) {
       filter(name == input$stationSelect) %>%
       pull(id)
     
-    
     # Ensure we select only the first ID if multiple values are returned
     if (length(selected_station) > 0) {
       selected_station_id(selected_station[1])  # Select the first ID
@@ -44,8 +50,6 @@ shinyServer(function(input, output, session) {
       updateSelectInput(session, "stationSelect", selected = selected_station_name)
     }
   })
-  
-  
   
   # Reactive expression to filter the combined data and calculate multi-annual means or sums
   filtered_data <- reactive({
@@ -105,6 +109,7 @@ shinyServer(function(input, output, session) {
     
     return(data_filtered)
   })
+  
   # Reactive expression to filter the time series data for the selected station, variable, and time aggregation
   time_series_data <- reactive({
     # Ensure that a station ID is selected before proceeding
@@ -174,8 +179,12 @@ shinyServer(function(input, output, session) {
       addResetMapButton()
   })
   
-  # Observe the filtered data and update the map accordingly
   observe({
+
+# Usage for normal and reversed palettes
+color_pal <- get_color_palette(input$variable, domain = filtered_data()$multi_annual_value, reverse = FALSE)
+color_pal2 <- get_color_palette(input$variable, domain = filtered_data()$multi_annual_value, reverse = TRUE)
+    
     leafletProxy("map", data = filtered_data()) %>%
       clearMarkers() %>%
       addCircleMarkers(
@@ -185,9 +194,18 @@ shinyServer(function(input, output, session) {
                         "<br><strong>Altitude: </strong>", altitude, " m",
                         "<br><strong>Multi-annual Value (", input$variable, "): </strong>", round(multi_annual_value, 2)),
         radius = 5,
-        color = ~colorNumeric("viridis", multi_annual_value)(multi_annual_value),
+        color = ~color_pal2(multi_annual_value),  # Circle marker colors reversed
         fillOpacity = 0.7,
         layerId = ~id  # Set the layer ID to the station ID for click events
+      ) %>%
+      clearControls() %>%
+      addLegend(
+        "bottomright",
+        pal = color_pal,
+        values = ~multi_annual_value,
+        title = input$variable,  # Use only the variable name as the title
+        opacity = 0.7,
+        labFormat = labelFormat(transform = function(x) sort(x, decreasing = TRUE))
       )
   })
   
@@ -282,6 +300,5 @@ shinyServer(function(input, output, session) {
     # Return the final title
     title_text
   })
-  
   
 })
