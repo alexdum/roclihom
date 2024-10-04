@@ -222,10 +222,8 @@ shinyServer(function(input, output, session) {
       
       output$station_name_output <- renderText({
         if (nrow(specific_data) > 0) {
-          paste("Selected Station:", specific_data$name[1],
-                "<br>ID:", specific_data$id[1],
-                "<br>Altitude:", specific_data$altitude[1], "m",
-                "<br>Multi-annual Value (", input$variable, "):", round(specific_data$multi_annual_value[1], 2))
+          paste( specific_data$name, specific_data$altitude, "m",
+                "multi-annual", input$variable, ":", round(specific_data$multi_annual_value, 1))
         } else {
           "No data available for the selected station and variable."
         }
