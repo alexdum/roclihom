@@ -207,26 +207,34 @@ shinyServer(function(input, output, session) {
       "red"
     }
     
+    # Define the y-axis label based on the variable
+    y_axis_label <- switch(input$variable,
+                           "PREC" = "mm",  # mm for precipitation
+                           "Tavg" = "°C",  # °C for temperature
+                           "Tmin" = "°C",  # °C for temperature
+                           "Tmax" = "°C"   # °C for temperature
+    )
+    
     # Generate the plot based on the selected aggregation type
     if (input$aggregation == "Monthly") {
       p <- ggplot(ts_data, aes(x = year, y = value)) +
         geom_line(color = line_color) +
         labs(title = paste("Monthly Time Series",  month.abb[input$month], "for", input$variable),
-        x = NULL, y = paste(input$variable, "Value")) +
+        x = NULL, y = y_axis_label) +
         theme_minimal()
       
     } else if (input$aggregation == "Seasonal") {
       p <- ggplot(ts_data, aes(x = year, y = value)) +
         geom_line(color = line_color) +
         labs(title = paste0("Seasonal Time Series (", input$season, ") for ", input$variable),
-        x = NULL, y = paste(input$variable, "Value")) +
+        x = NULL, y = y_axis_label) +
         theme_minimal()
       
     } else if (input$aggregation == "Annual") {
       p <- ggplot(ts_data, aes(x = year, y = value)) +
         geom_line(color = line_color) +
         labs(title = paste("Annual Time Series for", input$variable),
-        x = NULL, y = paste(input$variable, "Value")) +
+        x = NULL, y = y_axis_label) +
         theme_minimal()
     }
     
