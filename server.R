@@ -191,22 +191,24 @@ shinyServer(function(input, output, session) {
         lat = ~latitude,
         label = ~paste0(
           "<strong>Name: </strong>", name,
-          "<br><strong>", input$variable, ": </strong>", round(multi_annual_value, 1)
+          "<br><strong>", input$variable, ": </strong>", round(multi_annual_value, 1),
+          "<br><span style='color:red;'>click to update</span>"
         ) %>% lapply(htmltools::HTML),  # Ensure HTML format for label
         radius = ~ifelse(id == selected_id, 8, 5),  # Larger radius for selected station
-        color = ~ifelse(id == selected_id, "#808080", color_pal2(multi_annual_value)),  # Different color for selected
+        #color = ~ifelse(id == selected_id, "#808080", color_pal2(multi_annual_value)),  # Different color for selected
+        color = ~color_pal2(multi_annual_value),  # D
         fillOpacity = 0.9,  # Increased opacity for better visibility
         layerId = ~id  # Ensure layerId is set for interactivity
       ) %>%
-      addLabelOnlyMarkers(
-        lng = ~longitude[selected_id == id], 
-        lat = ~latitude[selected_id == id],
-        label = ~paste0(
-          "<strong>Name: </strong>", name[selected_id == id],
-          "<br><strong>", input$variable, ": </strong>", round(multi_annual_value[selected_id == id], 1)
-        ) %>% lapply(htmltools::HTML),  # Ensure HTML format for label
-        labelOptions = labelOptions(noHide = TRUE, direction = 'auto')
-      ) %>%
+      # addLabelOnlyMarkers(
+      #   lng = ~longitude[selected_id == id], 
+      #   lat = ~latitude[selected_id == id],
+      #   label = ~paste0(
+      #     "<strong>Name: </strong>", name[selected_id == id],
+      #     "<br><strong>", input$variable, ": </strong>", round(multi_annual_value[selected_id == id], 1)
+      #   ) %>% lapply(htmltools::HTML),  # Ensure HTML format for label
+      #   labelOptions = labelOptions(noHide = TRUE, direction = 'auto')
+      # ) %>%
       clearControls() %>%
       addLegend(
         "bottomright",
