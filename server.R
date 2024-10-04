@@ -248,19 +248,40 @@ shinyServer(function(input, output, session) {
       layout(autosize = TRUE, hovermode = "closest")
   })
   
-  # Display information about the selected station and update when input$variable changes
-  observe({
-    if (!is.null(selected_station_id())) {
-      specific_data <- filtered_data() %>% filter(id == selected_station_id())
-      
-      output$station_name_output <- renderText({
-        if (nrow(specific_data) > 0) {
-          paste( specific_data$name, "multi-annual", input$variable, ":", round(specific_data$multi_annual_value, 1))
-        } else {
-          "No data available for the selected station and variable."
-        }
-      })
+  # Display map title
+  output$map_title <- renderText({
+    # Extract the variable name for display
+    var_name <- switch(input$variable,
+                       "PREC" = "Precipitation",
+                       "Tavg" = "Average Temperature",
+                       "Tmin" = "Minimum Temperature",
+                       "Tmax" = "Maximum Temperature",
+                       "Variable"  # Generic name for other types
+    )
+    
+    # Extract the aggregation type
+    agg_type <- input$aggregation
+    
+    # Extract the year range
+    year_range <- paste(input$yearRange[1], "-", input$yearRange[2])
+    
+    # Initialize the title
+    title_text <- paste(var_name, agg_type, "from", year_range)
+    
+    # If aggregation type is "Monthly", append the selected month
+    if (agg_type == "Monthly") {
+      month_name <- month.abb[input$month]  # Get month abbreviation
+      title_text <- paste(var_name, agg_type, month_name, "from", year_range)
     }
+    
+    # If aggregation type is "Seasonal", append the selected season
+    if (agg_type == "Seasonal") {
+      title_text <- paste(var_name, agg_type, input$season, "from", year_range)
+    }
+    
+    # Return the final title
+    title_text
   })
+  
   
 })

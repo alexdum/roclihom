@@ -72,7 +72,7 @@ page_sidebar(
   ),
   card(
     card_header(
-      h5(textOutput("station_name_output"))  # Display selected station details
+      h5(textOutput("map_title"))  # map title
     ), 
     leafletOutput("map", height = 300),
     plotlyOutput("time_series_plot", height = "150px") # Add time series plot below the map
