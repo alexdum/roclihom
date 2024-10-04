@@ -22,7 +22,7 @@ shinyServer(function(input, output, session) {
       filter(name == input$stationSelect) %>%
       pull(id)
     
-  
+    
     # Ensure we select only the first ID if multiple values are returned
     if (length(selected_station) > 0) {
       selected_station_id(selected_station[1])  # Select the first ID
@@ -45,7 +45,7 @@ shinyServer(function(input, output, session) {
     }
   })
   
-
+  
   
   # Reactive expression to filter the combined data and calculate multi-annual means or sums
   filtered_data <- reactive({
@@ -200,27 +200,33 @@ shinyServer(function(input, output, session) {
     # Get the filtered time series data
     ts_data <- time_series_data()
     
+    # Define the color based on the variable
+    line_color <- if (input$variable == "PREC") {
+      "blue"
+    } else {
+      "red"
+    }
+    
     # Generate the plot based on the selected aggregation type
     if (input$aggregation == "Monthly") {
-      p <- ggplot(ts_data, aes(x = as.Date(paste(year, month, "01", sep = "-")), y = value)) +
-        geom_line(color = "blue") +
-        labs(title = paste("Monthly Time Series for", input$variable),
-             x = "Date", y = paste(input$variable, "Value")) +
-        scale_x_date(date_labels = "%Y-%m") +
+      p <- ggplot(ts_data, aes(x = year, y = value)) +
+        geom_line(color = line_color) +
+        labs(title = paste("Monthly Time Series",  month.abb[input$month], "for", input$variable),
+        x = NULL, y = paste(input$variable, "Value")) +
         theme_minimal()
       
     } else if (input$aggregation == "Seasonal") {
       p <- ggplot(ts_data, aes(x = year, y = value)) +
-        geom_line(color = "green") +
-        labs(title = paste("Seasonal Time Series (", input$season, ") for", input$variable),
-             x = "Year", y = paste(input$variable, "Value")) +
+        geom_line(color = line_color) +
+        labs(title = paste0("Seasonal Time Series (", input$season, ") for ", input$variable),
+        x = NULL, y = paste(input$variable, "Value")) +
         theme_minimal()
       
     } else if (input$aggregation == "Annual") {
       p <- ggplot(ts_data, aes(x = year, y = value)) +
-        geom_line(color = "red") +
+        geom_line(color = line_color) +
         labs(title = paste("Annual Time Series for", input$variable),
-             x = "Year", y = paste(input$variable, "Value")) +
+        x = NULL, y = paste(input$variable, "Value")) +
         theme_minimal()
     }
     
