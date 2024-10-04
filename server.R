@@ -192,8 +192,8 @@ shinyServer(function(input, output, session) {
   })
   
   
-  # Render the time series plot
-  output$time_series_plot <- renderPlot({
+  # Render the interactive time series plot using Plotly
+  output$time_series_plot <- renderPlotly({
     # Ensure that time series data is available
     req(time_series_data())
     
@@ -202,7 +202,7 @@ shinyServer(function(input, output, session) {
     
     # Generate the plot based on the selected aggregation type
     if (input$aggregation == "Monthly") {
-      ggplot(ts_data, aes(x = as.Date(paste(year, month, "01", sep = "-")), y = value)) +
+      p <- ggplot(ts_data, aes(x = as.Date(paste(year, month, "01", sep = "-")), y = value)) +
         geom_line(color = "blue") +
         labs(title = paste("Monthly Time Series for", input$variable),
              x = "Date", y = paste(input$variable, "Value")) +
@@ -210,19 +210,23 @@ shinyServer(function(input, output, session) {
         theme_minimal()
       
     } else if (input$aggregation == "Seasonal") {
-      ggplot(ts_data, aes(x = year, y = value)) +
+      p <- ggplot(ts_data, aes(x = year, y = value)) +
         geom_line(color = "green") +
         labs(title = paste("Seasonal Time Series (", input$season, ") for", input$variable),
              x = "Year", y = paste(input$variable, "Value")) +
         theme_minimal()
       
     } else if (input$aggregation == "Annual") {
-      ggplot(ts_data, aes(x = year, y = value)) +
+      p <- ggplot(ts_data, aes(x = year, y = value)) +
         geom_line(color = "red") +
         labs(title = paste("Annual Time Series for", input$variable),
              x = "Year", y = paste(input$variable, "Value")) +
         theme_minimal()
     }
+    
+    # Convert the ggplot object to a Plotly object for interactivity
+    ggplotly(p) %>%
+      layout(autosize = TRUE, hovermode = "closest")
   })
   
   # Display information about the selected station and update when input$variable changes

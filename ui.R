@@ -1,7 +1,3 @@
-library(shiny)
-library(bslib)
-library(leaflet)
-
 # Define the UI using bslib for a modern layout
 page_sidebar(
   
@@ -79,6 +75,6 @@ page_sidebar(
       h5(textOutput("station_name_output"))  # Display selected station details
     ), 
     leafletOutput("map", height = 300),
-    plotOutput("time_series_plot", height = 150)  # Add time series plot below the map
+    plotlyOutput("time_series_plot", height = "150px") # Add time series plot below the map
   )
 )
