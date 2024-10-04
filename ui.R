@@ -68,7 +68,7 @@ page_sidebar(
   ),
   
   # Adding the tabs
-  navset_card_tab(
+  navset_card_underline(
     id = "tabs",
     
     # First tab for Data Explorer
