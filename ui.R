@@ -75,6 +75,7 @@ page_sidebar(
     nav_panel(
       "Data Explorer",
       card(
+        full_screen = T,
         h5(textOutput("map_title")), 
         leafletOutput("map", height = 300),
         plotlyOutput("time_series_plot", height = "150px") # Add time series plot below the map
