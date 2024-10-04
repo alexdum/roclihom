@@ -86,7 +86,6 @@ page_sidebar(
     nav_panel(
       "Info",
       card(
-        h5("Information"),   # Title for the Info card
         
         p("The primary input data consists of daily data extracted from the database of the National
 Meteorological Administration of Romania."),
