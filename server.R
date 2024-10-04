@@ -191,8 +191,6 @@ shinyServer(function(input, output, session) {
       )
   })
   
-  
-  # Render the interactive time series plot using Plotly
   output$time_series_plot <- renderPlotly({
     # Ensure that time series data is available
     req(time_series_data())
@@ -216,26 +214,32 @@ shinyServer(function(input, output, session) {
                            "Tmax" = "°C"   # °C for temperature
     )
     
+    # Define the breaks for the x-axis
+    x_breaks <- c(1901, seq(1910, 2010, by = 10), 2023)
+    
     # Generate the plot based on the selected aggregation type
     if (input$aggregation == "Monthly") {
       p <- ggplot(ts_data, aes(x = year, y = value)) +
         geom_line(color = line_color) +
-        labs(title = paste("Monthly",input$variable,"Time Series",  month.abb[input$month], "for", ts_data_name),
-        x = NULL, y = y_axis_label) +
+        labs(title = paste("Monthly", input$variable, "Time Series", month.abb[input$month], "for", ts_data_name),
+             x = NULL, y = y_axis_label) +
+        scale_x_continuous(breaks = x_breaks) +  # Set x-axis breaks
         theme_minimal()
       
     } else if (input$aggregation == "Seasonal") {
       p <- ggplot(ts_data, aes(x = year, y = value)) +
         geom_line(color = line_color) +
         labs(title = paste0("Seasonal ", input$variable, " Time Series (", input$season, ") for ", ts_data_name),
-        x = NULL, y = y_axis_label) +
+             x = NULL, y = y_axis_label) +
+        scale_x_continuous(breaks = x_breaks) +
         theme_minimal()
       
     } else if (input$aggregation == "Annual") {
       p <- ggplot(ts_data, aes(x = year, y = value)) +
         geom_line(color = line_color) +
         labs(title = paste("Annual", input$variable, "Time Series for", ts_data_name),
-        x = NULL, y = y_axis_label) +
+             x = NULL, y = y_axis_label) +
+        scale_x_continuous(breaks = x_breaks) +
         theme_minimal()
     }
     
