@@ -2,7 +2,7 @@ shinyServer(function(input, output, session) {
   
   # Populate the selectInput with station names dynamically
   observe({
-    updateSelectInput(session, "stationSelect", choices = sort(unique(combined_data$name)))
+    updateSelectInput(session, "stationSelect", choices = sort(meta$name))
   })
   
   # Calculate the bounds of the data
