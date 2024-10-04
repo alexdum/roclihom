@@ -1,10 +1,3 @@
-library(shiny)
-library(leaflet)
-library(dplyr)
-library(plotly)
-library(ggplot2)
-library(RColorBrewer)
-
 shinyServer(function(input, output, session) {
   
   # Populate the selectInput with station names dynamically
@@ -179,36 +172,54 @@ shinyServer(function(input, output, session) {
       addResetMapButton()
   })
   
+  # Observe changes and update markers accordingly
   observe({
-
-# Usage for normal and reversed palettes
-color_pal <- get_color_palette(input$variable, domain = filtered_data()$multi_annual_value, reverse = FALSE)
-color_pal2 <- get_color_palette(input$variable, domain = filtered_data()$multi_annual_value, reverse = TRUE)
+    req(filtered_data())  # Ensure that filtered_data is available
     
+    # Retrieve the current selected station ID
+    selected_id <- selected_station_id()
+    
+    # Define color palettes
+    color_pal <- get_color_palette(input$variable, domain = filtered_data()$multi_annual_value, reverse = FALSE)
+    color_pal2 <- get_color_palette(input$variable, domain = filtered_data()$multi_annual_value, reverse = TRUE)
+    
+    # Update the markers on the map
     leafletProxy("map", data = filtered_data()) %>%
       clearMarkers() %>%
       addCircleMarkers(
-        lng = ~longitude, lat = ~latitude,
-        popup = ~paste0("<strong>Name: </strong>", name,
-                        "<br><strong>ID: </strong>", id,
-                        "<br><strong>Altitude: </strong>", altitude, " m",
-                        "<br><strong>Multi-annual Value (", input$variable, "): </strong>", round(multi_annual_value, 2)),
-        radius = 5,
-        color = ~color_pal2(multi_annual_value),  # Circle marker colors reversed
-        fillOpacity = 0.7,
-        layerId = ~id  # Set the layer ID to the station ID for click events
+        lng = ~longitude, 
+        lat = ~latitude,
+        label = ~paste0(
+          "<strong>Name: </strong>", name,
+          "<br><strong>", input$variable, ": </strong>", round(multi_annual_value, 1)
+        ) %>% lapply(htmltools::HTML),  # Ensure HTML format for label
+        radius = ~ifelse(id == selected_id, 8, 5),  # Larger radius for selected station
+        color = ~ifelse(id == selected_id, "#808080", color_pal2(multi_annual_value)),  # Different color for selected
+        fillOpacity = 0.9,  # Increased opacity for better visibility
+        layerId = ~id  # Ensure layerId is set for interactivity
+      ) %>%
+      addLabelOnlyMarkers(
+        lng = ~longitude[selected_id == id], 
+        lat = ~latitude[selected_id == id],
+        label = ~paste0(
+          "<strong>Name: </strong>", name[selected_id == id],
+          "<br><strong>", input$variable, ": </strong>", round(multi_annual_value[selected_id == id], 1)
+        ) %>% lapply(htmltools::HTML),  # Ensure HTML format for label
+        labelOptions = labelOptions(noHide = TRUE, direction = 'auto')
       ) %>%
       clearControls() %>%
       addLegend(
         "bottomright",
         pal = color_pal,
         values = ~multi_annual_value,
-        title = input$variable,  # Use only the variable name as the title
+        title = input$variable,
         opacity = 0.7,
         labFormat = labelFormat(transform = function(x) sort(x, decreasing = TRUE))
       )
+    
   })
   
+  # Render the time series plot
   output$time_series_plot <- renderPlotly({
     # Ensure that time series data is available
     req(time_series_data())
