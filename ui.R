@@ -81,29 +81,7 @@ page_sidebar(
       card(
         full_screen = TRUE,
         
-        h5(textOutput("map_title")),
-        
-        # Custom CSS to remove margin and padding
-        tags$style(HTML("
-        #map {
-          margin: 0 !important;
-          padding: 0 !important;
-        }
-        
-        .card-body,
-        .bslib-gap-spacing,
-        .html-fill-item,
-        .html-fill-container {
-          margin: 0 !important;
-          padding: 1 !important;
-          gap: 0 !important;
-        }
-        
-        .leaflet-container {
-          margin: 0 !important;
-          padding: 0 !important;
-        }
-      ")),
+        h6(textOutput("map_title")),
         
         leafletOutput("map", height = "300px"),
         
