@@ -93,19 +93,7 @@ page_sidebar(
     nav_panel(
       "Info",
       card(
-        
-        p("The primary input data consists of daily data extracted from the database of the National
-Meteorological Administration of Romania."),
-        p("For 1901–1960, the daily Tavg was derived as the
-average of three climatological observations taken at 06, 12, and 18 UTC, then a Köppen
-coefficient was applied, calculated based on the Tmin and month of the year. For 1961-2023,
-the daily Tavg was calculated as the arithmetic average of four climatological observations
-recorded at 00, 06, 12, and 18 UTC."),
-        p("For the entire period of analysis, daily PREC was the total accumulation from 18 UTC on the
-previous day to 18 UTC on the current day, with the timestamp corresponding to the end of
-the 24-hour accumulation period."),
-        p("The quality control, gap-filling, and homogenization were performed using the methodology implemented in Climatol.")
-        # Add more content as needed for the Info tab
+        includeHTML("www/html/roclihom_info.html")  # Load external HTML file
       )
     )
   )
