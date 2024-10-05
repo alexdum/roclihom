@@ -154,13 +154,14 @@ shinyServer(function(input, output, session) {
     }
   })
   
-  # Render the Leaflet map
   output$map <- renderLeaflet({
     center_lat <- (map_bounds$lat_min + map_bounds$lat_max) / 2
     center_lng <- (map_bounds$lng_min + map_bounds$lng_max) / 2
     
     leaflet(options = leafletOptions(minZoom = 6, maxZoom = 18)) %>%
-      addTiles() %>%
+      addTiles(group = "OpenStreetMap") %>%  # Default OpenStreetMap
+      addProviderTiles(providers$Esri.WorldTopoMap, group = "Esri World Topo Map") %>%
+      addProviderTiles(providers$Esri.WorldImagery, group = "Esri World Imagery") %>%
       fitBounds(
         lng1 = map_bounds$lng_min, lat1 = map_bounds$lat_min,
         lng2 = map_bounds$lng_max, lat2 = map_bounds$lat_max
@@ -168,6 +169,10 @@ shinyServer(function(input, output, session) {
       setMaxBounds(
         lng1 = map_bounds$lng_min, lat1 = map_bounds$lat_min,
         lng2 = map_bounds$lng_max, lat2 = map_bounds$lat_max
+      ) %>%
+      addLayersControl(
+        baseGroups = c("Esri World Topo Map", "OpenStreetMap", "Esri World Imagery"),
+        options = layersControlOptions(collapsed = T) 
       ) %>%
       addResetMapButton()
   })
@@ -225,17 +230,8 @@ shinyServer(function(input, output, session) {
   
   # Render the plot title dynamically
   output$plot_title <- renderText({
-    ts_data_name <- unique(time_series_data()$name)  # Assuming time_series_data() gives this
     
-    if (input$aggregation == "Monthly") {
-      paste("Monthly", input$variable, "Time Series for", month.abb[input$month], ts_data_name)
-      
-    } else if (input$aggregation == "Seasonal") {
-      paste("Seasonal", input$variable, "Time Series (", input$season, ") for", ts_data_name)
-      
-    } else if (input$aggregation == "Annual") {
-      paste("Annual", input$variable, "Time Series for", ts_data_name)
-    }
+    paste(input$stationSelect, "station")
   })
   
   # Render the time series plot
