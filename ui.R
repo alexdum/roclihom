@@ -1,5 +1,8 @@
 page_sidebar(
   theme = bs_theme(version = 5, bootswatch = "cosmo"),
+  # Include the external CSS file
+  includeCSS("www/styles.css"),  # Assuming sales.css is in the www folder
+  
   
   sidebar = sidebar(
     # Dropdown to select station by name
@@ -74,11 +77,37 @@ page_sidebar(
     # First tab for Data Explorer
     nav_panel(
       "Data Explorer",
+      
       card(
-        full_screen = T,
-        h5(textOutput("map_title")), 
-        leafletOutput("map", height = 300),
-        plotlyOutput("time_series_plot", height = "150px") # Add time series plot below the map
+        full_screen = TRUE,
+        
+        h5(textOutput("map_title")),
+        
+        # Custom CSS to remove margin and padding
+        tags$style(HTML("
+        #map {
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        
+        .card-body,
+        .bslib-gap-spacing,
+        .html-fill-item,
+        .html-fill-container {
+          margin: 0 !important;
+          padding: 1 !important;
+          gap: 0 !important;
+        }
+        
+        .leaflet-container {
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+      ")),
+        
+        leafletOutput("map", height = "300px"),
+        
+        plotlyOutput("time_series_plot", height = "150px")
       )
     ),
     
@@ -94,10 +123,10 @@ average of three climatological observations taken at 06, 12, and 18 UTC, then a
 coefficient was applied, calculated based on the Tmin and month of the year. For 1961-2023,
 the daily Tavg was calculated as the arithmetic average of four climatological observations
 recorded at 00, 06, 12, and 18 UTC."),
-p("For the entire period of analysis, daily PREC was the total accumulation from 18 UTC on the
+        p("For the entire period of analysis, daily PREC was the total accumulation from 18 UTC on the
 previous day to 18 UTC on the current day, with the timestamp corresponding to the end of
 the 24-hour accumulation period."),
-p("The quality control, gap-filling, and homogenization were performed using the methodology implemented in Climatol.")
+        p("The quality control, gap-filling, and homogenization were performed using the methodology implemented in Climatol.")
         # Add more content as needed for the Info tab
       )
     )

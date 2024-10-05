@@ -1,0 +1,60 @@
+/* sales.css */
+
+/* Set padding to 0.5px or any other unit for the map */
+#map {
+  margin: 0 !important;
+  padding: 0.5px !important;
+}
+
+.card-body,
+.bslib-gap-spacing,
+.html-fill-item,
+.html-fill-container {
+  margin: 0 !important;
+  padding: 0.5px !important;
+  gap: 0.5px !important;
+}
+
+.leaflet-container {
+  margin: 0 !important;
+  padding: 0.5px !important;
+}
+
+/* Sidebar-specific styling */
+
+/* Adjust sidebar width and remove spacing */
+.bslib-sidebar-layout {
+  --_sidebar-width: 250px; /* Default sidebar width */
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Style the sidebar content */
+.sidebar-content {
+  margin: 2px !important;
+  padding: 10px !important; /* Add padding inside the sidebar if needed */
+}
+
+/* Customize the sidebar background and text color */
+.bslib-sidebar-layout {
+  background-color: #f8f9fa; /* Light gray background (Bootstrap default) */
+  border-right: 1px solid #dee2e6; /* Add a border to the right of the sidebar */
+}
+
+.sidebar-content {
+  color: #333; /* Dark text for better readability */
+}
+
+/* Optional: Style the sidebar toggle button */
+.sidebar-toggle {
+  background-color: #007bff; /* Blue background */
+  color: white;              /* White text */
+  border: none;              /* Remove border */
+  padding: 10px;              /* Add some padding */
+  cursor: pointer;           /* Pointer cursor on hover */
+}
+
+/* Hover effect for the sidebar toggle button */
+.sidebar-toggle:hover {
+  background-color: #0056b3; /* Darker blue on hover */
+}
