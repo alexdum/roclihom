@@ -10,9 +10,9 @@
 .bslib-gap-spacing,
 .html-fill-item,
 .html-fill-container {
-  margin: 0 !important;
+  margin: 1px !important;
   padding: 1px !important;
-  gap: 0.5px !important;
+  gap: 1px !important;
 }
 
 .leaflet-container {
@@ -26,7 +26,7 @@
 .bslib-sidebar-layout {
   --_sidebar-width: 250px; /* Default sidebar width */
   margin: 2px !important;
-  padding: 2px !important;
+  padding: 10px !important;
 }
 
 /* Style the sidebar content */
