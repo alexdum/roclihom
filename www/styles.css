@@ -11,13 +11,13 @@
 .html-fill-item,
 .html-fill-container {
   margin: 0 !important;
-  padding: 0.5px !important;
+  padding: 1px !important;
   gap: 0.5px !important;
 }
 
 .leaflet-container {
-  margin: 0 !important;
-  padding: 0.5px !important;
+  margin: 2px !important;
+  padding: 2px !important;
 }
 
 /* Sidebar-specific styling */
@@ -25,8 +25,8 @@
 /* Adjust sidebar width and remove spacing */
 .bslib-sidebar-layout {
   --_sidebar-width: 250px; /* Default sidebar width */
-  margin: 0 !important;
-  padding: 0 !important;
+  margin: 2px !important;
+  padding: 2px !important;
 }
 
 /* Style the sidebar content */
@@ -38,7 +38,7 @@
 /* Customize the sidebar background and text color */
 .bslib-sidebar-layout {
   background-color: #f8f9fa; /* Light gray background (Bootstrap default) */
-  border-right: 1px solid #dee2e6; /* Add a border to the right of the sidebar */
+  border-right: 2px solid #dee2e6; /* Add a border to the right of the sidebar */
 }
 
 .sidebar-content {
