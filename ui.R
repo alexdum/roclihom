@@ -85,6 +85,8 @@ page_sidebar(
         
         leafletOutput("map", height = "300px"),
         
+        h6(textOutput("plot_title")),
+        
         plotlyOutput("time_series_plot", height = "150px")
       )
     ),

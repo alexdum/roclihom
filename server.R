@@ -221,6 +221,23 @@ shinyServer(function(input, output, session) {
     
   })
   
+  
+  
+  # Render the plot title dynamically
+  output$plot_title <- renderText({
+    ts_data_name <- unique(time_series_data()$name)  # Assuming time_series_data() gives this
+    
+    if (input$aggregation == "Monthly") {
+      paste("Monthly", input$variable, "Time Series for", month.abb[input$month], ts_data_name)
+      
+    } else if (input$aggregation == "Seasonal") {
+      paste("Seasonal", input$variable, "Time Series (", input$season, ") for", ts_data_name)
+      
+    } else if (input$aggregation == "Annual") {
+      paste("Annual", input$variable, "Time Series for", ts_data_name)
+    }
+  })
+  
   # Render the time series plot
   output$time_series_plot <- renderPlotly({
     # Ensure that time series data is available
@@ -228,7 +245,6 @@ shinyServer(function(input, output, session) {
     
     # Get the filtered time series data
     ts_data <- time_series_data()
-    ts_data_name <- unique(ts_data$name)
     
     # Define the color based on the variable
     line_color <- if (input$variable == "PREC") {
@@ -249,44 +265,17 @@ shinyServer(function(input, output, session) {
     x_breaks <- c(1901, seq(1910, 2010, by = 10), 2023)
     
     # Generate the plot based on the selected aggregation type
-    if (input$aggregation == "Monthly") {
-      p <- ggplot(ts_data, aes(x = year, y = value)) +
-        geom_line(color = line_color) +
-        labs(title = paste("Monthly", input$variable, "Time Series", month.abb[input$month], "for", ts_data_name),
-             x = NULL, y = y_axis_label) +
-        scale_x_continuous(breaks = x_breaks) +  # Set x-axis breaks
-        theme_minimal()+
-        theme(
-          plot.title = element_text(size = 10.5)
-        )
-      
-    } else if (input$aggregation == "Seasonal") {
-      p <- ggplot(ts_data, aes(x = year, y = value)) +
-        geom_line(color = line_color) +
-        labs(title = paste0("Seasonal ", input$variable, " Time Series (", input$season, ") for ", ts_data_name),
-             x = NULL, y = y_axis_label) +
-        scale_x_continuous(breaks = x_breaks) +
-        theme_minimal()+
-        theme(
-          plot.title = element_text(size = 10.5)
-        )
-      
-    } else if (input$aggregation == "Annual") {
-      p <- ggplot(ts_data, aes(x = year, y = value)) +
-        geom_line(color = line_color) +
-        labs(title = paste("Annual", input$variable, "Time Series for", ts_data_name),
-             x = NULL, y = y_axis_label) +
-        scale_x_continuous(breaks = x_breaks) +
-        theme_minimal() +
-        theme(
-          plot.title = element_text(size = 10.5)
-        )
-    }
+    p <- ggplot(ts_data, aes(x = year, y = value)) +
+      geom_line(color = line_color) +
+      labs(x = NULL, y = y_axis_label) +  # Remove title from here
+      scale_x_continuous(breaks = x_breaks) +  # Set x-axis breaks
+      theme_minimal()
     
     # Convert the ggplot object to a Plotly object for interactivity
     ggplotly(p) %>%
       layout(autosize = TRUE, hovermode = "closest")
   })
+  
   
   # Display map title
   output$map_title <- renderText({
