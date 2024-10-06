@@ -267,6 +267,7 @@ shinyServer(function(input, output, session) {
     kendall_test_result <- kendallTrendTest(ts_data$value ~ ts_data$year)
     print(ts_data)
     theil_sen_slope <- kendall_test_result$estimate["slope"]
+    p_value <-  kendall_test_result$p.value
     print(theil_sen_slope)
     print(kendall_test_result$estimate[2])
     intercept <- mean(ts_data$value) - theil_sen_slope * mean(ts_data$year)
@@ -279,8 +280,9 @@ shinyServer(function(input, output, session) {
       labs(x = NULL, y = y_axis_label) +  # Remove title from here
       scale_x_continuous(breaks = x_breaks) +  # Set x-axis breaks
       theme_minimal() +
-      annotate("text", x = 1920, y = max(ts_data$value) * 1.05,  # Adjust x and y for annotation positioning
-               label = paste0("Theil-Sen slope: ", round(theil_sen_slope * 10, 3)," ", y_axis_label,"/decade"), 
+      annotate("text", x = 1935, y = max(ts_data$value) * 1.05,  # Adjust x and y for annotation positioning
+               label = 
+                 paste0("Theil-Sen slope: ", round(theil_sen_slope * 10, 3)," ", y_axis_label,"/decade  p.value:",round(p_value, 4)), 
                hjust = 0, vjust = 1, color = "black", size = 3, fontface = "italic")  # Add slope annotation
     
     # Convert the ggplot object to a Plotly object for interactivity
