@@ -71,22 +71,23 @@ shinyServer(function(input, output, session) {
         summarise(multi_annual_value = mean(value, na.rm = TRUE), .groups = "drop")
       
     } else if (agg_type == "Seasonal") {
-      # Define the seasons (DJF, MAM, JJA, SON) and compute sums for the selected season if PREC
-      data_filtered <- data_filtered %>%
-        mutate(season = case_when(
-          month %in% c(12, 1, 2) ~ "DJF",
-          month %in% c(3, 4, 5) ~ "MAM",
-          month %in% c(6, 7, 8) ~ "JJA",
-          month %in% c(9, 10, 11) ~ "SON"
-        )) %>%
+      data_filtered <-
+        data_filtered |>
+        mutate(
+          Date = as.Date(paste(year, month, "01", sep = "-")),
+          season_id =  (12 * year + month) %/% 3,
+          season = mkseas(Date, "DJF")
+        ) |>
+        group_by(season_id) %>%
+        mutate(season_label = paste(max(year),season)) %>%
+        filter(Date >= as.Date("1901-03-01"), Date <= as.Date("2023-11-30")) %>% #pentru calcul sezon corect trecere ani
         filter(season == input$season) %>%  # Filter by the selected season
-        group_by(id, name, latitude, longitude, altitude, year) %>%
-        summarise(
-          seasonal_value = if (input$variable == "PREC") sum(value, na.rm = TRUE) else mean(value, na.rm = TRUE),
-          .groups = "drop"
-        ) %>%
+        group_by(id, season_label, name, latitude, longitude, altitude) %>%
+        summarise(value = if (input$variable == "PREC") sum(value, na.rm = TRUE) else mean(value, na.rm = TRUE), .groups = "drop") %>%
+        separate(season_label, into = c("year", "season"), sep = " ") |>
         group_by(id, name, latitude, longitude, altitude) %>%
-        summarise(multi_annual_value = mean(seasonal_value, na.rm = TRUE), .groups = "drop")
+        summarise(multi_annual_value = mean(value, na.rm = TRUE), .groups = "drop") |>
+        mutate(multi_annual_value = round(multi_annual_value, 1))
       
     } else if (agg_type == "Annual") {
       # Compute annual sums if PREC, otherwise mean
@@ -108,9 +109,8 @@ shinyServer(function(input, output, session) {
     # Ensure that a station ID is selected before proceeding
     req(selected_station_id())
     
+    # Common filtering for all aggregation types
     year_range <- input$yearRange
-    agg_type <- input$aggregation
-    
     data_filtered <- combined_data %>%
       filter(
         id == selected_station_id(),
@@ -119,43 +119,48 @@ shinyServer(function(input, output, session) {
         year <= year_range[2]
       )
     
+    # Determine the aggregation type
+    agg_type <- input$aggregation
+    
     if (agg_type == "Monthly") {
-      # Return raw monthly data for the selected station
+      req(input$month)  # Ensure that the month input is selected
       return(
         data_filtered %>%
-          filter(month == input$month) |>
-          select(name, year, month, value) %>%
+          filter(month == input$month) %>%
+          dplyr::select(name, year, month, value) %>%
           arrange(year, month)
       )
       
     } else if (agg_type == "Seasonal") {
-      # Group by season and calculate seasonal averages
+      # Add date and season information
       data_filtered <- data_filtered %>%
-        mutate(season = case_when(
-          month %in% c(12, 1, 2) ~ "DJF",
-          month %in% c(3, 4, 5) ~ "MAM",
-          month %in% c(6, 7, 8) ~ "JJA",
-          month %in% c(9, 10, 11) ~ "SON"
-        )) %>%
-        group_by(name, year, season) %>%
+        mutate(
+          Date = as.Date(paste(year, month, "01", sep = "-")),
+          season_id = (12 * year + month) %/% 3,
+          season = mkseas(Date, "DJF")  # Assuming mkseas is properly defined
+        ) %>%
+        group_by(season_id) %>%
+        mutate(season_label = paste(max(year), season)) %>%
+        filter(Date >= as.Date("1901-03-01"), Date <= as.Date("2023-11-30")) %>%
+        group_by(id, season_label) %>%
         summarise(value = if (input$variable == "PREC") sum(value, na.rm = TRUE) else mean(value, na.rm = TRUE), .groups = "drop") %>%
+        separate(season_label, into = c("year", "season"), sep = " ") %>%
         filter(season == input$season) %>%
-        mutate(value = round(value, 1)) |>
+        mutate(value = round(value, 1), year = as.numeric(year)) %>%
         arrange(year)
+      # print(summary(data_filtered))
       return(data_filtered)
       
     } else if (agg_type == "Annual") {
-      # Group by year and calculate annual averages
       return(
         data_filtered %>%
           group_by(name, year) %>%
           summarise(value = if (input$variable == "PREC") sum(value, na.rm = TRUE) else mean(value, na.rm = TRUE), .groups = "drop") %>%
-          mutate(value = round(value, 1)) |>
+          mutate(value = round(value, 1)) %>%
           arrange(year)
       )
     }
   })
-  
   output$map <- renderLeaflet({
     center_lat <- (map_bounds$lat_min + map_bounds$lat_max) / 2
     center_lng <- (map_bounds$lng_min + map_bounds$lng_max) / 2
