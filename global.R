@@ -6,6 +6,7 @@ library(arrow)
 library(dplyr)
 library(ggplot2) 
 library(plotly)
+library(EnvStats)
 
 source("utils/get_color_palette.R", local = T)
 

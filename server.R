@@ -140,6 +140,7 @@ shinyServer(function(input, output, session) {
         group_by(name, year, season) %>%
         summarise(value = if (input$variable == "PREC") sum(value, na.rm = TRUE) else mean(value, na.rm = TRUE), .groups = "drop") %>%
         filter(season == input$season) %>%
+        mutate(value = round(value, 1)) |>
         arrange(year)
       return(data_filtered)
       
@@ -149,6 +150,7 @@ shinyServer(function(input, output, session) {
         data_filtered %>%
           group_by(name, year) %>%
           summarise(value = if (input$variable == "PREC") sum(value, na.rm = TRUE) else mean(value, na.rm = TRUE), .groups = "drop") %>%
+          mutate(value = round(value, 1)) |>
           arrange(year)
       )
     }
@@ -234,7 +236,8 @@ shinyServer(function(input, output, session) {
     paste(input$stationSelect, "station")
   })
   
-  # Render the time series plot
+  
+  # Render the time series plot with Theil-Sen trend line and slope annotation
   output$time_series_plot <- renderPlotly({
     # Ensure that time series data is available
     req(time_series_data())
@@ -260,18 +263,30 @@ shinyServer(function(input, output, session) {
     # Define the breaks for the x-axis
     x_breaks <- c(1901, seq(1910, 2010, by = 10), 2023)
     
-    # Generate the plot based on the selected aggregation type
+    # Calculate Kendall's Tau and Theil-Sen slope
+    kendall_test_result <- kendallTrendTest(ts_data$value ~ ts_data$year)
+    print(ts_data)
+    theil_sen_slope <- kendall_test_result$estimate["slope"]
+    print(theil_sen_slope)
+    print(kendall_test_result$estimate[2])
+    intercept <- mean(ts_data$value) - theil_sen_slope * mean(ts_data$year)
+    trend_line <- intercept + theil_sen_slope * ts_data$year
+    
+    # Generate the plot with Theil-Sen trend line and slope annotation
     p <- ggplot(ts_data, aes(x = year, y = value)) +
       geom_line(color = line_color) +
+      geom_line(aes(y = trend_line), color = "#808080") +  # Add Theil-Sen trend line
       labs(x = NULL, y = y_axis_label) +  # Remove title from here
       scale_x_continuous(breaks = x_breaks) +  # Set x-axis breaks
-      theme_minimal()
+      theme_minimal() +
+      annotate("text", x = 1910, y = max(ts_data$value) * 1.05,  # Adjust x and y for annotation positioning
+               label = sprintf("Slp.: %.3f", round(theil_sen_slope * 10, 3)), 
+               hjust = 0, vjust = 1, color = "black", size = 4, fontface = "italic")  # Add slope annotation
     
     # Convert the ggplot object to a Plotly object for interactivity
     ggplotly(p) %>%
       layout(autosize = TRUE, hovermode = "closest")
   })
-  
   
   # Display map title
   output$map_title <- renderText({
