@@ -265,11 +265,8 @@ shinyServer(function(input, output, session) {
     
     # Calculate Kendall's Tau and Theil-Sen slope
     kendall_test_result <- kendallTrendTest(ts_data$value ~ ts_data$year)
-    print(ts_data)
     theil_sen_slope <- kendall_test_result$estimate["slope"]
     p_value <-  kendall_test_result$p.value
-    print(theil_sen_slope)
-    print(kendall_test_result$estimate[2])
     intercept <- mean(ts_data$value) - theil_sen_slope * mean(ts_data$year)
     trend_line <- intercept + theil_sen_slope * ts_data$year
     
