@@ -12,7 +12,8 @@ RUN install2.r --error \
     dplyr \
     plotly \
     EnvStats \
-    seas
+    seas \
+    tidyr
 
 # Install development packages from GitHub
 RUN installGithub.r \
