@@ -10,7 +10,8 @@ RUN install2.r --error \
     leaflet.extras \
     arrow \
     dplyr \
-    plotly
+    plotly \
+    EnvStats
 
 # Install development packages from GitHub
 RUN installGithub.r \
