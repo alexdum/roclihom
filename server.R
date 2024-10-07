@@ -209,7 +209,13 @@ shinyServer(function(input, output, session) {
         ) %>% lapply(htmltools::HTML),  # Ensure HTML format for label
         radius = ~ifelse(id == selected_id, 8, 5),  # Larger radius for selected station
         #color = ~ifelse(id == selected_id, "#808080", color_pal2(multi_annual_value)),  # Different color for selected
-        color = ~color_pal2(multi_annual_value),  # D
+        # Border color (stroke) changes when selected, otherwise it's transparent or a default value
+        color = ~ifelse(id == selected_id, "#FF0000", "#00000000"),  # Red border for selected, transparent for others
+        
+        # Inside color stays the same for all, based on the color palette
+        fillColor = ~color_pal2(multi_annual_value), 
+        stroke = ~ifelse(id == selected_id, TRUE, FALSE),  # Add a border stroke for selected
+        weight = ~ifelse(id == selected_id, 2, 1),        # Thicker border for selected
         fillOpacity = 0.9,  # Increased opacity for better visibility
         layerId = ~id  # Ensure layerId is set for interactivity
       ) %>%
@@ -266,7 +272,7 @@ shinyServer(function(input, output, session) {
     )
     
     # Define the breaks for the x-axis
-    x_breaks <- c(1901, seq(1910, 2010, by = 10), 2023)
+    x_lim <- range(ts_data$year)
     
     # Calculate Kendall's Tau and Theil-Sen slope
     kendall_test_result <- kendallTrendTest(ts_data$value ~ ts_data$year)
@@ -278,11 +284,12 @@ shinyServer(function(input, output, session) {
     # Generate the plot with Theil-Sen trend line and slope annotation
     p <- ggplot(ts_data, aes(x = year, y = value)) +
       geom_line(color = line_color) +
+      xlim(x_lim) +
       geom_line(aes(y = trend_line), color = "#808080") +  # Add Theil-Sen trend line
       labs(x = NULL, y = y_axis_label) +  # Remove title from here
-      scale_x_continuous(breaks = x_breaks) +  # Set x-axis breaks
+      #scale_x_continuous(breaks = x_breaks) +  # Set x-axis breaks
       theme_minimal() +
-      annotate("text", x = 1925, y = max(ts_data$value) * 1.05,  # Adjust x and y for annotation positioning
+      annotate("text", x = x_lim[1] + 24, y = max(ts_data$value) * 1.05,  # Adjust x and y for annotation positioning
                label = 
                  paste0("Theil-Sen slope: ", round(theil_sen_slope * 10, 3)," ", y_axis_label,"/decade  p.value:",round(p_value, 4)), 
                hjust = 0, vjust = 1, color = "black", size = 3, fontface = "italic")  # Add slope annotation
