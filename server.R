@@ -11,14 +11,12 @@ shinyServer(function(input, output, session) {
   
   # Update the selected station ID based on the dropdown selection
   observeEvent(input$stationSelect, {
-    selected_station <- combined_data %>%
+    selected_station <- meta %>%
       filter(name == input$stationSelect) %>%
       pull(id)
     
-    # Ensure we select only the first ID if multiple values are returned
-    if (length(selected_station) > 0) {
-      selected_station_id(selected_station[1])  # Select the first ID
-    }
+    selected_station_id(selected_station) 
+    
   })
   
   # Listen for click events on the map markers
@@ -29,7 +27,7 @@ shinyServer(function(input, output, session) {
       selected_station_id(clicked_station)
       
       # Also update the dropdown to reflect the selected station
-      selected_station_name <- combined_data %>%
+      selected_station_name <- meta %>%
         filter(id == clicked_station) %>%
         pull(name)
       
@@ -153,7 +151,7 @@ shinyServer(function(input, output, session) {
         filter(season == input$season) %>%
         mutate(value = round(value, 1), year = as.numeric(year)) %>%
         arrange(year)
-      # print(summary(data_filtered))
+      print(summary(data_filtered))
       return(data_filtered)
       
     } else if (agg_type == "Annual") {
@@ -238,9 +236,7 @@ shinyServer(function(input, output, session) {
     
   })
   
-  
-  
-  # Render the plot title dynamically
+   # Render the plot title dynamically
   output$plot_title <- renderText({
     
     paste(input$stationSelect, "station")
