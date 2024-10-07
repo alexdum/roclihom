@@ -49,59 +49,71 @@ shinyServer(function(input, output, session) {
     # Ensure a station ID is selected before filtering
     # req(selected_station_id())
     
-    year_range <- input$yearRange  # Get the selected year range
-    agg_type <- input$aggregation  # Get the selected aggregation type (Monthly, Seasonal, Annual)
-    
-    # Filter data based on user input
-    data_filtered <- combined_data %>%
-      filter(
-        altitude >= input$altitudeRange[1],  # Filter by altitude range
-        altitude <= input$altitudeRange[2],
-        variable == input$variable,          # Filter by the selected variable
-        year >= year_range[1],               # Filter by the selected year range
-        year <= year_range[2]
-      )
-    
-    # Calculate multi-annual means or sums based on the selected aggregation type
-    if (agg_type == "Monthly") {
-      # Compute multi-annual means for the selected month
-      data_filtered <- data_filtered %>%
-        filter(month == input$month) %>%
-        group_by(id, name, latitude, longitude, altitude) %>%
-        summarise(multi_annual_value = mean(value, na.rm = TRUE), .groups = "drop")
+    # Add a progress bar
+    withProgress(message = 'Processing data...', value = 0, {
       
-    } else if (agg_type == "Seasonal") {
-      data_filtered <-
-        data_filtered |>
-        mutate(
-          Date = as.Date(paste(year, month, "01", sep = "-")),
-          season_id =  (12 * year + month) %/% 3,
-          season = mkseas(Date, "DJF")
-        ) |>
-        group_by(season_id) %>%
-        mutate(season_label = paste(max(year),season)) %>%
-        filter(Date >= as.Date("1901-03-01"), Date <= as.Date("2023-11-30")) %>% #pentru calcul sezon corect trecere ani
-        filter(season == input$season) %>%  # Filter by the selected season
-        group_by(id, season_label, name, latitude, longitude, altitude) %>%
-        summarise(value = if (input$variable == "PREC") sum(value, na.rm = TRUE) else mean(value, na.rm = TRUE), .groups = "drop") %>%
-        separate(season_label, into = c("year", "season"), sep = " ") |>
-        group_by(id, name, latitude, longitude, altitude) %>%
-        summarise(multi_annual_value = mean(value, na.rm = TRUE), .groups = "drop") |>
-        mutate(multi_annual_value = round(multi_annual_value, 1))
+      # Step 1: Get user inputs and initialize data filtering
+      incProgress(0.2, detail = "Setting up filters...")  # Progress at 20%
       
-    } else if (agg_type == "Annual") {
-      # Compute annual sums if PREC, otherwise mean
-      data_filtered <- data_filtered %>%
-        group_by(id, name, latitude, longitude, altitude, year) %>%
-        summarise(
-          annual_value = if (input$variable == "PREC") sum(value, na.rm = TRUE) else mean(value, na.rm = TRUE),
-          .groups = "drop"
-        ) %>%
-        group_by(id, name, latitude, longitude, altitude) %>%
-        summarise(multi_annual_value = mean(annual_value, na.rm = TRUE), .groups = "drop")
-    }
-    
-    return(data_filtered)
+      year_range <- input$yearRange  # Get the selected year range
+      agg_type <- input$aggregation  # Get the selected aggregation type (Monthly, Seasonal, Annual)
+      
+      # Filter data based on user input
+      data_filtered <- combined_data %>%
+        filter(
+          altitude >= input$altitudeRange[1],  # Filter by altitude range
+          altitude <= input$altitudeRange[2],
+          variable == input$variable,          # Filter by the selected variable
+          year >= year_range[1],               # Filter by the selected year range
+          year <= year_range[2]
+        )
+      
+      # Step 2: Apply aggregation based on agg_type
+      incProgress(0.4, detail = paste("Applying", agg_type, "aggregation..."))  # Progress at 40%
+      
+      if (agg_type == "Monthly") {
+        # Compute multi-annual means for the selected month
+        data_filtered <- data_filtered %>%
+          filter(month == input$month) %>%
+          group_by(id, name, latitude, longitude, altitude) %>%
+          summarise(multi_annual_value = mean(value, na.rm = TRUE), .groups = "drop")
+        
+      } else if (agg_type == "Seasonal") {
+        data_filtered <-
+          data_filtered |>
+          mutate(
+            Date = as.Date(paste(year, month, "01", sep = "-")),
+            season_id =  (12 * year + month) %/% 3,
+            season = mkseas(Date, "DJF")
+          ) |>
+          group_by(season_id) %>%
+          mutate(season_label = paste(max(year), season)) %>%
+          filter(Date >= as.Date("1901-03-01"), Date <= as.Date("2023-11-30")) %>% #pentru calcul sezon corect trecere ani
+          filter(season == input$season) %>%  # Filter by the selected season
+          group_by(id, season_label, name, latitude, longitude, altitude) %>%
+          summarise(value = if (input$variable == "PREC") sum(value, na.rm = TRUE) else mean(value, na.rm = TRUE), .groups = "drop") %>%
+          separate(season_label, into = c("year", "season"), sep = " ") |>
+          group_by(id, name, latitude, longitude, altitude) %>%
+          summarise(multi_annual_value = mean(value, na.rm = TRUE), .groups = "drop") |>
+          mutate(multi_annual_value = round(multi_annual_value, 1))
+        
+      } else if (agg_type == "Annual") {
+        # Compute annual sums if PREC, otherwise mean
+        data_filtered <- data_filtered %>%
+          group_by(id, name, latitude, longitude, altitude, year) %>%
+          summarise(
+            annual_value = if (input$variable == "PREC") sum(value, na.rm = TRUE) else mean(value, na.rm = TRUE),
+            .groups = "drop"
+          ) %>%
+          group_by(id, name, latitude, longitude, altitude) %>%
+          summarise(multi_annual_value = mean(annual_value, na.rm = TRUE), .groups = "drop")
+      }
+      
+      # Step 3: Finalizing the data processing
+      incProgress(1, detail = "Finalizing...")  # Progress at 100%
+      
+      return(data_filtered)
+    })
   })
   
   # Reactive expression to filter the time series data for the selected station, variable, and time aggregation
@@ -244,6 +256,7 @@ shinyServer(function(input, output, session) {
   
   # Render the time series plot with Theil-Sen trend line and slope annotation
   output$time_series_plot <- renderPlotly({
+
     # Ensure that time series data is available
     req(time_series_data())
     
