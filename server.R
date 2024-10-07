@@ -24,7 +24,6 @@ shinyServer(function(input, output, session) {
     clicked_station <- input$map_marker_click$id
     
     if (!is.null(clicked_station)) {
-      selected_station_id(clicked_station)
       
       # Also update the dropdown to reflect the selected station
       selected_station_name <- meta %>%
@@ -38,7 +37,7 @@ shinyServer(function(input, output, session) {
   # Reactive expression to filter the combined data and calculate multi-annual means or sums
   filtered_data <- reactive({
     # Ensure a station ID is selected before filtering
-    # req(selected_station_id())
+    req(selected_station_id())
     
     # Add a progress bar
     withProgress(message = 'Processing data...', value = 0, {
@@ -126,7 +125,6 @@ shinyServer(function(input, output, session) {
     agg_type <- input$aggregation
     
     if (agg_type == "Monthly") {
-      req(input$month)  # Ensure that the month input is selected
       return(
         data_filtered %>%
           filter(month == input$month) %>%
@@ -146,7 +144,7 @@ shinyServer(function(input, output, session) {
         mutate(season_label = paste(max(year), season)) %>%
         filter(Date >= as.Date("1901-03-01"), Date <= as.Date("2023-11-30")) %>%
         group_by(id, season_label) %>%
-        summarise(value = if (input$variable == "PREC") sum(value, na.rm = TRUE) else mean(value, na.rm = TRUE), .groups = "drop") %>%
+        summarise(value = if (input$variable == "PREC") sum(value) else mean(value), .groups = "drop") %>%
         separate(season_label, into = c("year", "season"), sep = " ") %>%
         filter(season == input$season) %>%
         mutate(value = round(value, 1), year = as.numeric(year)) %>%
@@ -158,7 +156,7 @@ shinyServer(function(input, output, session) {
       return(
         data_filtered %>%
           group_by(name, year) %>%
-          summarise(value = if (input$variable == "PREC") sum(value, na.rm = TRUE) else mean(value, na.rm = TRUE), .groups = "drop") %>%
+          summarise(value = if (input$variable == "PREC") sum(value) else mean(value), .groups = "drop") %>%
           mutate(value = round(value, 1)) %>%
           arrange(year)
       )
@@ -247,7 +245,7 @@ shinyServer(function(input, output, session) {
   output$time_series_plot <- renderPlotly({
 
     # Ensure that time series data is available
-    req(time_series_data())
+    # req(time_series_data())
     
     # Get the filtered time series data
     ts_data <- time_series_data()
