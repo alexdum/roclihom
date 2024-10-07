@@ -5,13 +5,6 @@ shinyServer(function(input, output, session) {
     updateSelectInput(session, "stationSelect", choices = sort(meta$name))
   })
   
-  # Calculate the bounds of the data
-  map_bounds <- list(
-    lng_min = min(meta$longitude, na.rm = TRUE),
-    lng_max = max(meta$longitude, na.rm = TRUE),
-    lat_min = min(meta$latitude, na.rm = TRUE),
-    lat_max = max(meta$latitude, na.rm = TRUE)
-  )
   
   # Initialize a reactive value to store the clicked or selected station ID
   selected_station_id <- reactiveVal(NULL)
@@ -174,8 +167,8 @@ shinyServer(function(input, output, session) {
     }
   })
   output$map <- renderLeaflet({
-    center_lat <- (map_bounds$lat_min + map_bounds$lat_max) / 2
-    center_lng <- (map_bounds$lng_min + map_bounds$lng_max) / 2
+    center_lat <- 45
+    center_lng <- 25
     
     leaflet(options = leafletOptions(minZoom = 6, maxZoom = 18)) %>%
       addTiles(group = "OpenStreetMap") %>%  # Default OpenStreetMap
