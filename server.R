@@ -163,7 +163,7 @@ shinyServer(function(input, output, session) {
     }
   })
   output$map <- renderLeaflet({
-    center_lat <- 45
+    center_lat <- 44
     center_lng <- 25
     
     leaflet(options = leafletOptions(minZoom = 6, maxZoom = 18)) %>%
