@@ -3,12 +3,14 @@ page_navbar(
   # Include the external CSS file
   #includeCSS("www/styles.css"),  # Assuming sales.css is in the www folder
   fillable_mobile = T,
+  collapsible = T,
   
   # First tab for Data Explorer
   nav_panel(
     "Data Explorer",
     layout_sidebar(
       sidebar = sidebar(
+        open = list(desktop = "open", mobile = "always-below"),
         # Dropdown to select station by name
         selectInput(
           inputId = "stationSelect",
