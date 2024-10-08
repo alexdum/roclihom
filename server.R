@@ -257,11 +257,7 @@ shinyServer(function(input, output, session) {
     ts_data <- time_series_data()
     
     # Define the color based on the variable
-    line_color <- if (input$variable == "PREC") {
-      "blue"
-    } else {
-      "red"
-    }
+    line_color <- if_else(input$variable == "PREC", "blue", "red")
     
     # Define the y-axis label based on the variable
     y_axis_label <- switch(input$variable,
