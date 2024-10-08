@@ -10,7 +10,7 @@ page_navbar(
     "Data Explorer",
     layout_sidebar(
       sidebar = sidebar(
-        open = list(desktop = "open", mobile = "always-below"),
+        open = list(desktop = "open", mobile = "always-above"),
         # Dropdown to select station by name
         selectInput(
           inputId = "stationSelect",
