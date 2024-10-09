@@ -95,7 +95,7 @@ page_navbar(
   nav_panel(
     "Info",
     card(
-      includeHTML("www/html/roclihom_info.html")  # Load external HTML file
+      includeMarkdown("www/html/roclihom_info.md")  # Load external HTML file
     )
   )
 )

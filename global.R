@@ -9,7 +9,7 @@ library(plotly)
 library(EnvStats)
 library(tidyr)
 library(seas)
-
+library(markdown)
 source("utils/get_color_palette.R", local = T)
 
 # Load the meta data

@@ -13,7 +13,8 @@ RUN install2.r --error \
     plotly \
     EnvStats \
     seas \
-    tidyr
+    tidyr \
+    markdown
 
 # Install development packages from GitHub
 RUN installGithub.r \
