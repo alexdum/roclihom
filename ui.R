@@ -80,7 +80,7 @@ page_navbar(
       card(
         full_screen = TRUE,
         
-        h6(textOutput("map_title")),
+        card_header(h6(textOutput("map_title"))),
         
         leafletOutput("map", height = "300px"),
         
