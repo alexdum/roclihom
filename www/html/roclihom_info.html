@@ -1,17 +1,32 @@
+<style>
+  h6 {
+    margin: 0; /* Remove top and bottom margin for h6 */
+    margin-bottom: -5px; /* Adjust space below h6 heading */
+  }
+  
+  p {
+    margin: 0; /* Remove top and bottom margin for p */
+    margin-bottom: 5px; /* Adjust space between paragraphs */
+    line-height: 1.4; /* Control line spacing inside paragraphs */
+  }
+</style>
+
 <h6>Data Source</h6>
-<p>The primary input data consists of daily data extracted from the database of the National Meteorological Administration of Romania.</p>
-<br>
+<p>The primary input data consists of daily records extracted from the database of the National Meteorological Administration of Romania.</p>
+
 <h6>Temperature Data Processing</h6>
-<p>For 1901–1960, the daily Tavg was derived as the average of three climatological observations taken at 06, 12, and 18 UTC. A Köppen coefficient was then applied, calculated based on Tmin and the month of the year.</p>
-<p>For 1961–2023, the daily Tavg was calculated as the arithmetic average of four climatological observations recorded at 00, 06, 12, and 18 UTC.</p>
-<br>
+<p>
+    <strong>1901–1960:</strong> The daily average temperature (Tavg) was calculated as the mean of three climatological observations taken at 06, 12, and 18 UTC. A Köppen coefficient, determined based on the minimum temperature (Tmin) and the month of the year, was then applied.<br>
+    <strong>1961–2023:</strong> The daily Tavg was calculated as the arithmetic average of four climatological observations recorded at 00, 06, 12, and 18 UTC.
+</p>
+
 <h6>Precipitation Data Processing</h6>
-<p>For the entire period of analysis, daily PREC was the total accumulation from 18 UTC on the previous day to 18 UTC on the current day, with the timestamp corresponding to the end of the 24-hour accumulation period.</p>
-<br>
+<p>For the entire analysis period, daily precipitation (PREC) was calculated as the total accumulation from 18 UTC on the previous day to 18 UTC on the current day, with the timestamp marking the end of the 24-hour accumulation period.</p>
+
 <h6>Quality Control and Data Homogenization</h6>
-<p>The quality control, gap-filling, and homogenization were performed using the methodology implemented in Climatol.</p>
-<br>
-<h6>Trend analysis</h6>
-<p>The trends were evaluated using the Theil–Sen nonparametric estimator, and the levels of significance were assessed with the Mann-Kendall test, as implemented in the EnvStats R package.</p>
-<br>
-<p>The detailed methodology for this study is thoroughly explained in our manuscript, 'RoCliHom - Long-term Homogenized Air Temperature and Precipitation Datasets in Romania, 1901 - 2023,' by Dumitrescu et al. (2024), which has been submitted to the Scientific Data journal.</p>
+<p>Quality control procedures, gap-filling, and homogenization were conducted using the methodology implemented in the Climatol software.</p>
+
+<h6>Trend Analysis</h6>
+<p>Trends were assessed using the Theil–Sen nonparametric estimator, while significance levels were evaluated using the Mann-Kendall test, both of which were implemented via the <em>EnvStats</em> R package.</p>
+
+<p>The detailed methodology for this study is described in the manuscript '<em>RoCliHom - Long-term Homogenized Air Temperature and Precipitation Datasets in Romania, 1901–2023</em>' by Dumitrescu et al. (2024), submitted to the journal <em>Scientific Data</em>.</p>
