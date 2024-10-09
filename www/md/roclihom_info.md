@@ -2,6 +2,10 @@
 
 The primary input data consists of daily records extracted from the database of the National Meteorological Administration of Romania.
 
+##### Source code
+Repository: <a href="https://github.com/alexdum/roclihom" target="_blank">github.com/alexdum/roclihom</a>
+Report issue(s) or feature(s) request <a href="https://github.com/alexdum/roclihom/issues" target="_blank">here</a>
+
 ##### Temperature Data Processing
 
 **1901–1960:** The daily average temperature (Tavg) was calculated as the mean of three climatological observations taken at 06, 12, and 18 UTC. A Köppen coefficient, determined based on the minimum temperature (Tmin) and the month of the year, was then applied.\
