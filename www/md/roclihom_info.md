@@ -3,8 +3,8 @@
 The primary input data consists of daily records extracted from the database of the National Meteorological Administration of Romania.
 
 ##### Source code
-Repository: <a href="https://github.com/alexdum/roclihom" target="_blank">github.com/alexdum/roclihom</a>
-Report issue(s) or feature(s) request <a href="https://github.com/alexdum/roclihom/issues" target="_blank">here</a>
+
+Repository: <a href="https://github.com/alexdum/roclihom" target="_blank">github.com/alexdum/roclihom</a> Report issue(s) or feature(s) request <a href="https://github.com/alexdum/roclihom/issues" target="_blank">here</a>
 
 ##### Temperature Data Processing
 
@@ -23,4 +23,4 @@ Quality control procedures, gap-filling, and homogenization were conducted using
 
 Trends were assessed using the Theil–Sen nonparametric estimator, while significance levels were evaluated using the Mann-Kendall test, both of which were implemented via the *EnvStats* R package.
 
-The detailed methodology for this study is described in the manuscript '*RoCliHom - Long-term Homogenized Air Temperature and Precipitation Datasets in Romania, 1901–2023*' by Dumitrescu et al. (2025), which has been accepted for publication in the journal  *Scientific Data*.
+The detailed methodology for this study is described in the manuscript '*Long-term Homogenized Air Temperature and Precipitation Datasets in Romania, 1901–2023*' by Dumitrescu et al. (2025), which has been published in the journal *Scientific Data* https://www.nature.com/articles/s41597-025-05371-4.
