@@ -162,6 +162,41 @@ shinyServer(function(input, output, session) {
       )
     }
   })
+  
+  # Allow downloading the plotted time series as CSV
+  output$download_csv <- downloadHandler(
+    filename = function() {
+      station_slug <- if (is.null(input$stationSelect) || input$stationSelect == "") {
+        "station"
+      } else {
+        gsub("[^A-Za-z0-9]+", "_", tolower(input$stationSelect))
+      }
+      
+      agg_label <- switch(
+        input$aggregation,
+        "Monthly" = sprintf("monthly_%02d", input$month),
+        "Seasonal" = paste0("seasonal_", input$season),
+        "Annual" = "annual"
+      )
+      
+      paste0("roclihom_", station_slug, "_", tolower(input$variable), "_", agg_label, ".csv")
+    },
+    content = function(file) {
+      ts_data <- time_series_data()
+      req(nrow(ts_data) > 0)
+      
+      export_df <- ts_data %>%
+        mutate(
+          station = input$stationSelect,
+          variable = input$variable,
+          aggregation = input$aggregation
+        ) %>%
+        relocate(station, variable, aggregation)
+      
+      write.csv(export_df, file, row.names = FALSE)
+    }
+  )
+  
   output$map <- renderLeaflet({
     center_lat <- 44
     center_lng <- 25
