@@ -149,7 +149,7 @@ shinyServer(function(input, output, session) {
         filter(season == input$season) %>%
         mutate(value = round(value, 1), year = as.numeric(year)) %>%
         arrange(year)
-      print(summary(data_filtered))
+      #print(summary(data_filtered))
       return(data_filtered)
       
     } else if (agg_type == "Annual") {
