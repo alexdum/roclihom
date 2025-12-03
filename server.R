@@ -1,4 +1,4 @@
-shinyServer(function(input, output, session) {
+server <- function(input, output, session) {
   
   # Populate the selectInput with station names dynamically
   observe({
@@ -365,4 +365,4 @@ shinyServer(function(input, output, session) {
     title_text
   })
   
-})
+}
