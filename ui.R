@@ -1,5 +1,6 @@
 page_navbar(
   theme = bs_theme(version = 5),
+  navbar_options = navbar_options(collapsible = TRUE),
 
   # Add the canonical link and noindex meta tag inside the head tag
   tags$head(
@@ -9,7 +10,6 @@ page_navbar(
   
   
   fillable_mobile = T,
-  collapsible = T,
   
   # First tab for Data Explorer
   nav_panel(
