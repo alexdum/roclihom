@@ -90,7 +90,11 @@ page_navbar(
         
         leafletOutput("map", height = "300px"),
         
-        h6(textOutput("plot_title")),
+        div(
+          class = "d-flex justify-content-between align-items-center gap-2 flex-wrap",
+          h6(textOutput("plot_title"), class = "mb-0"),
+          downloadButton("download_csv", "Download CSV", class = "btn btn-primary btn-sm")
+        ),
         
         plotlyOutput("time_series_plot", height = "150px")
       )
