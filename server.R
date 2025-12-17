@@ -60,7 +60,7 @@ server <- function(input, output, session) {
       if (agg_type == "Monthly") {
         # Compute multi-annual means for the selected month
         data_filtered <- data_filtered %>%
-          filter(month == input$month) %>%
+          filter(month == as.integer(input$month)) %>%
           group_by(id, name, latitude, longitude, altitude) %>%
           summarise(multi_annual_value = mean(value, na.rm = TRUE), .groups = "drop")
       } else if (agg_type == "Seasonal") {
@@ -113,7 +113,7 @@ server <- function(input, output, session) {
     if (agg_type == "Monthly") {
       return(
         data_filtered %>%
-          filter(month == input$month) %>%
+          filter(month == as.integer(input$month)) %>%
           dplyr::select(name, year, month, value) %>%
           arrange(year, month)
       )
@@ -145,7 +145,7 @@ server <- function(input, output, session) {
   output$download_map_data <- downloadHandler(
     filename = function() {
       agg_label <- switch(input$aggregation,
-        "Monthly" = sprintf("monthly_%02d", input$month),
+        "Monthly" = sprintf("monthly_%02d", as.integer(input$month)),
         "Seasonal" = paste0("seasonal_", input$season),
         "Annual" = "annual"
       )
@@ -168,7 +168,7 @@ server <- function(input, output, session) {
       }
 
       agg_label <- switch(input$aggregation,
-        "Monthly" = sprintf("monthly_%02d", input$month),
+        "Monthly" = sprintf("monthly_%02d", as.integer(input$month)),
         "Seasonal" = paste0("seasonal_", input$season),
         "Annual" = "annual"
       )

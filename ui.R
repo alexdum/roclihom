@@ -52,16 +52,14 @@ page_navbar(
           selected = "Monthly"
         ),
 
-        # Numeric input for the month (only shown for monthly aggregation)
+        # Select input for the month (only shown for monthly aggregation)
         conditionalPanel(
           condition = "input.aggregation == 'Monthly'",
-          numericInput(
+          selectInput(
             inputId = "month",
             label = "Month:",
-            value = 1,
-            min = 1,
-            max = 12,
-            step = 1
+            choices = setNames(1:12, month.name),
+            selected = 1
           )
         ),
 
