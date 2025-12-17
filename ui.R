@@ -74,7 +74,11 @@ page_navbar(
             choices = c("DJF", "MAM", "JJA", "SON"),
             selected = "DJF"
           )
-        )
+        ),
+
+        # Download button for Map Data (Aggregated Spatial Data)
+        hr(),
+        downloadButton("download_map_data", "Download Map Data", class = "btn btn-secondary btn-sm w-100")
       ),
       card(
         full_screen = TRUE,
@@ -85,7 +89,7 @@ page_navbar(
           h6(textOutput("plot_title"), class = "mb-0"),
           downloadButton("download_csv", "Download CSV", class = "btn btn-primary btn-sm")
         ),
-        plotlyOutput("time_series_plot", height = "150px")
+        plotlyOutput("time_series_plot", height = "250px")
       )
     )
   ),
