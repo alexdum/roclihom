@@ -341,17 +341,17 @@ server <- function(input, output, session) {
     year_range <- paste(input$yearRange[1], "-", input$yearRange[2])
 
     # Initialize the title
-    title_text <- paste(var_name, agg_type, "from", year_range)
+    title_text <- paste(var_name, tolower(agg_type), "from", year_range)
 
     # If aggregation type is "Monthly", append the selected month
     if (agg_type == "Monthly") {
-      month_name <- month.abb[input$month] # Get month abbreviation
-      title_text <- paste(var_name, agg_type, month_name, "from", year_range)
+      month_name <- month.abb[as.integer(input$month)] # Get month abbreviation
+      title_text <- paste(var_name, tolower(agg_type), month_name, "from", year_range)
     }
 
     # If aggregation type is "Seasonal", append the selected season
     if (agg_type == "Seasonal") {
-      title_text <- paste(var_name, agg_type, input$season, "from", year_range)
+      title_text <- paste(var_name, tolower(agg_type), input$season, "from", year_range)
     }
 
     # Return the final title
