@@ -3,14 +3,11 @@ page_navbar(
   navbar_options = navbar_options(collapsible = TRUE),
 
   # Add the canonical link and noindex meta tag inside the head tag
-  tags$head(
-    tags$link(rel = "canonical", href = "https://climate-insights.netlify.app/roclihom"),
-    
+  header = tags$head(
+    tags$link(rel = "canonical", href = "https://climate-insights.netlify.app/roclihom")
   ),
-  
-  
   fillable_mobile = T,
-  
+
   # First tab for Data Explorer
   nav_panel(
     "Data Explorer",
@@ -21,25 +18,23 @@ page_navbar(
         selectInput(
           inputId = "stationSelect",
           label = "Select Station by Name:",
-          choices = NULL,  # Choices will be populated dynamically
+          choices = NULL, # Choices will be populated dynamically
           selected = NULL
         ),
-        
         sliderInput(
           inputId = "altitudeRange",
           label = "Altitude Range (m):",
-          min = 0, max = 2504, 
+          min = 0, max = 2504,
           value = c(0, 2504),
           step = 1
         ),
-        
         selectInput(
           inputId = "variable",
           label = "Variable:",
           choices = c("PREC", "Tavg", "Tmin", "Tmax"),
           selected = "PREC"
         ),
-        
+
         # Add a slider input to select the year range
         sliderInput(
           inputId = "yearRange",
@@ -48,7 +43,7 @@ page_navbar(
           value = c(1901, 2023),
           step = 1
         ),
-        
+
         # Add a selectInput to choose the aggregation level (Monthly, Seasonal, Annual)
         selectInput(
           inputId = "aggregation",
@@ -56,7 +51,7 @@ page_navbar(
           choices = c("Monthly", "Seasonal", "Annual"),
           selected = "Monthly"
         ),
-        
+
         # Numeric input for the month (only shown for monthly aggregation)
         conditionalPanel(
           condition = "input.aggregation == 'Monthly'",
@@ -69,7 +64,7 @@ page_navbar(
             step = 1
           )
         ),
-        
+
         # Select input for selecting season (only shown for seasonal aggregation)
         conditionalPanel(
           condition = "input.aggregation == 'Seasonal'",
@@ -81,31 +76,25 @@ page_navbar(
           )
         )
       ),
-      
-      
       card(
         full_screen = TRUE,
-        
         card_header(h6(textOutput("map_title"))),
-        
         leafletOutput("map", height = "300px"),
-        
         div(
           class = "d-flex justify-content-between align-items-center gap-2 flex-wrap",
           h6(textOutput("plot_title"), class = "mb-0"),
           downloadButton("download_csv", "Download CSV", class = "btn btn-primary btn-sm")
         ),
-        
         plotlyOutput("time_series_plot", height = "150px")
       )
     )
   ),
-  
+
   # Second tab for Info
   nav_panel(
     "Info",
     card(
-      includeMarkdown("www/md/roclihom_info.md")  # Load external HTML file
+      includeMarkdown("www/md/roclihom_info.md") # Load external HTML file
     )
   )
 )
