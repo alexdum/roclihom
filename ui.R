@@ -1,5 +1,9 @@
 page_navbar(
-  theme = bs_theme(version = 5),
+  theme = bs_theme(
+    version = 5,
+    base_font = font_google("Source Sans Pro", wght = "300;400;700"),
+    heading_font = font_google("Source Sans Pro", wght = "300;400;700")
+  ),
   navbar_options = navbar_options(collapsible = TRUE),
 
   # Add the canonical link and noindex meta tag inside the head tag
