@@ -4,7 +4,18 @@ page_navbar(
 
   # Add the canonical link and noindex meta tag inside the head tag
   header = tags$head(
-    tags$link(rel = "canonical", href = "https://climate-insights.netlify.app/roclihom")
+    tags$link(rel = "canonical", href = "https://climate-insights.netlify.app/roclihom"),
+    # Auto-collapse navbar on mobile when a nav item is selected
+    tags$script(HTML("
+      $(document).ready(function() {
+        $('.navbar-nav .nav-link').on('click', function() {
+          var navbarCollapse = $('.navbar-collapse');
+          if (navbarCollapse.hasClass('show')) {
+            navbarCollapse.collapse('hide');
+          }
+        });
+      });
+    "))
   ),
   fillable_mobile = T,
 
