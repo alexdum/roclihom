@@ -67,9 +67,7 @@ server <- function(input, output, session) {
         data_filtered <- data_filtered %>%
           add_seasonal_columns() %>%
           filter_seasonal_data(input$season) %>%
-          group_by(id, season_label, name, latitude, longitude, altitude) %>%
-          summarise(value = if (input$variable == "PREC") sum(value, na.rm = TRUE) else mean(value, na.rm = TRUE), .groups = "drop") %>%
-          separate(season_label, into = c("year", "season"), sep = " ") %>%
+          aggregate_seasonal(input$variable) %>%
           group_by(id, name, latitude, longitude, altitude) %>%
           summarise(multi_annual_value = mean(value, na.rm = TRUE), .groups = "drop") %>%
           mutate(multi_annual_value = round(multi_annual_value, 1))
@@ -122,10 +120,8 @@ server <- function(input, output, session) {
       data_filtered <- data_filtered %>%
         add_seasonal_columns() %>%
         filter_seasonal_data(input$season) %>%
-        group_by(id, season_label) %>%
-        summarise(value = if (input$variable == "PREC") sum(value, na.rm = TRUE) else mean(value, na.rm = TRUE), .groups = "drop") %>%
-        separate(season_label, into = c("year", "season"), sep = " ") %>%
-        mutate(value = round(value, 1), year = as.numeric(year)) %>%
+        aggregate_seasonal(input$variable) %>%
+        mutate(value = round(value, 1)) %>%
         arrange(year)
 
       # print(summary(data_filtered))
