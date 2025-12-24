@@ -1,4 +1,5 @@
 page_navbar(
+  title = "RoCliHom Explorer",
   theme = bs_theme(
     version = 5,
     base_font = font_google("Source Sans Pro", wght = "300;400;700"),
