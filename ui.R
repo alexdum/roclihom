@@ -1,15 +1,12 @@
 page_navbar(
   title = "RoCliHom Explorer",
-  theme = bs_theme(
-    version = 5,
-    base_font = font_google("Source Sans Pro", wght = "300;400;700"),
-    heading_font = font_google("Source Sans Pro", wght = "300;400;700")
-  ),
+  theme = bs_theme(version = 5),
   navbar_options = navbar_options(collapsible = TRUE),
 
   # Add the canonical link and noindex meta tag inside the head tag
   header = tags$head(
     tags$link(rel = "canonical", href = "https://climate-insights.netlify.app/roclihom"),
+    tags$script(src = "js/fullscreen.js"),
     # Auto-collapse navbar on mobile when a nav item is selected
     tags$script(HTML("
       $(document).ready(function() {
@@ -113,6 +110,21 @@ page_navbar(
     "Info",
     card(
       includeMarkdown("www/md/roclihom_info.md") # Load external HTML file
+    )
+  ),
+  nav_spacer(),
+  nav_item(
+    tooltip(
+      tags$a(
+        id = "fullscreen_toggle",
+        href = "#",
+        onclick = "toggleFullScreen(); return false;",
+        style = "display: flex; align-items: center; color: rgba(0,0,0,0.55); padding: 0.5rem 1rem; text-decoration: none;",
+        bsicons::bs_icon("arrows-fullscreen", size = "1.2rem"),
+        span("Fullscreen", style = "margin-left: 5px; display: none;")
+      ),
+      "Toggle Fullscreen",
+      placement = "bottom"
     )
   )
 )

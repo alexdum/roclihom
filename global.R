@@ -1,5 +1,6 @@
 library(shiny)
 library(bslib)
+library(bsicons)
 library(leaflet)
 library(leaflet.extras)
 library(arrow)
