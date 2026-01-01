@@ -14,7 +14,8 @@ RUN install2.r --error \
     EnvStats \
     seas \
     tidyr \
-    markdown
+    markdown\
+    bsicons
 
 # Install development packages from GitHub
 RUN installGithub.r \
