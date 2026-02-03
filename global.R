@@ -15,6 +15,7 @@ library(markdown)
 source("utils/get_color_palette.R", local = T)
 source("utils/data_processing.R", local = T)
 
+
 # Load the meta data
 meta <- read_parquet("www/data/tabs/roclihom_meta_1901_2023.parquet")
 
