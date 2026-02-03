@@ -76,6 +76,9 @@ page_navbar(
       .map-layer-control.expanded .control-icon {
         display: none !important;
       }
+      .map-layer-control .control-content label {
+        font-size: 85%; /* Reduce text size by 15% */
+      }
 
     "))
   ),
@@ -169,13 +172,13 @@ page_navbar(
                 inputId = "basemap",
                 label = "Basemap",
                 choices = c(
-                  "Carto Positron" = "carto_positron",
+                  "Carto Positron (Light)" = "carto_positron",
                   "Carto Voyager" = "carto_voyager",
+                  "OpenStreetMap" = "osm",
+                  "OpenStreetMap Gray" = "osm_gray",
                   "Esri World Topo Map" = "esri_topo",
                   "Esri World Imagery" = "esri_imagery",
-                  "Mapbox Satellite" = "mapbox_satellite",
-                  "OpenStreetMap" = "osm",
-                  "OpenStreetMap Gray" = "osm_gray"
+                  "Mapbox Satellite" = "mapbox_satellite"
                 ),
                 selected = "carto_positron"
               ),
