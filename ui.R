@@ -16,6 +16,22 @@ page_navbar(
             navbarCollapse.collapse('hide');
           }
         });
+
+        // Layer Control Interactions
+        var $layerControl = $('.map-layer-control');
+
+        $layerControl.on('mouseenter', function() {
+          $(this).addClass('expanded');
+        });
+
+        $layerControl.on('mouseleave', function() {
+          $(this).removeClass('expanded');
+        });
+
+        // Auto-close when a radio button (basemap) is selected
+        $layerControl.on('change', 'input[type=\\'radio\\']', function() {
+          $layerControl.removeClass('expanded');
+        });
       });
     ")),
     tags$style(HTML("
@@ -33,7 +49,7 @@ page_navbar(
         display: flex;
         flex-direction: column;
       }
-      .map-layer-control:hover {
+      .map-layer-control.expanded {
         width: 200px;
         height: auto;
         padding: 10px;
@@ -53,13 +69,14 @@ page_navbar(
         margin-top: 5px;
         white-space: nowrap; /* Prevent wrapping during transition */
       }
-      .map-layer-control:hover .control-content {
+      .map-layer-control.expanded .control-content {
         opacity: 1;
         white-space: normal;
       }
-      .map-layer-control:hover .control-icon {
+      .map-layer-control.expanded .control-icon {
         display: none !important;
       }
+
     "))
   ),
   fillable_mobile = T,
@@ -142,7 +159,7 @@ page_navbar(
           style = "position: relative;",
           maplibreOutput("map", height = "400px"),
           absolutePanel(
-            top = 130, right = 10,
+            top = 130, left = 10,
             class = "map-layer-control",
             style = "z-index: 1000;",
             div(class = "control-icon", icon("layer-group")),
@@ -153,16 +170,22 @@ page_navbar(
                 label = "Basemap",
                 choices = c(
                   "Carto Positron" = "carto_positron",
-                  "Carto Dark Matter" = "carto_dark_matter",
                   "Carto Voyager" = "carto_voyager",
-                  "Esri Imagery" = "esri_imagery"
+                  "Esri World Topo Map" = "esri_topo",
+                  "Esri World Imagery" = "esri_imagery"
                 ),
                 selected = "carto_positron"
+              ),
+              hr(style = "margin: 8px 0;"),
+              checkboxInput(
+                inputId = "show_labels",
+                label = "Show Labels",
+                value = TRUE
               )
             )
           ),
           absolutePanel(
-            top = 80, right = 10,
+            top = 80, left = 10,
             style = "z-index: 1000;",
             actionButton(
               inputId = "home_zoom",

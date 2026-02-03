@@ -213,7 +213,7 @@ server <- function(input, output, session) {
       center = c(25, 44),
       zoom = 6
     ) %>%
-      add_navigation_control(show_compass = FALSE, visualize_pitch = FALSE)
+      add_navigation_control(show_compass = FALSE, visualize_pitch = FALSE, position = "top-left")
   })
 
 
@@ -298,12 +298,16 @@ server <- function(input, output, session) {
         circle_stroke_width = get_column("circle_stroke_width"),
         circle_opacity = 0.9,
         # Create a tooltip for hover
-        tooltip = get_column("popup_content")
+        tooltip = get_column("popup_content"),
+        before_id = stations_before_id()
       )
   })
 
-  # Track the current active Esri layer ID
-  current_esri_layer_id <- reactiveVal(NULL)
+  # Track the layer ID that stations should be drawn BEFORE
+  stations_before_id <- reactiveVal(NULL)
+
+  # Track IDs of dynamically added raster layers for explicit removal
+  current_raster_layers <- reactiveVal(character(0))
 
   # Observe changes in the basemap selection and update the map style
   observeEvent(input$basemap, {
@@ -311,29 +315,85 @@ server <- function(input, output, session) {
 
     proxy <- maplibre_proxy("map")
 
-    # Clean up any existing Esri layer if it exists
-    active_esri_id <- current_esri_layer_id()
-    if (!is.null(active_esri_id)) {
-      print(paste("Cleaning up existing Esri layer:", active_esri_id))
-      # Attempt to remove the layer. Note: The source might linger but won't be visible.
-      # mapgl doesn't have a direct 'remove_source', but clearing the layer is key.
-      tryCatch(
-        {
-          proxy %>% clear_layer(active_esri_id)
-        },
-        error = function(e) {
-          print(paste("Error clearing Esri layer:", e$message))
-        }
-      )
-      current_esri_layer_id(NULL)
+    # Explicitly remove any previously added raster layers
+    old_layers <- isolate(current_raster_layers())
+    if (length(old_layers) > 0) {
+      for (layer_id in old_layers) {
+        proxy %>% clear_layer(layer_id)
+      }
+      current_raster_layers(character(0)) # Reset
     }
 
-    if (input$basemap == "esri_imagery") {
-      # For Esri, set a blank style first, then add raster layer dynamically
+    if (input$basemap %in% c("carto_positron", "carto_voyager", "esri_imagery")) {
+      # VECTOR LOGIC (Carto-based styles)
+      # For esri_imagery, we use Voyager style but insert satellite raster below labels
+      print("Setting Vector Style for Carto...")
+
+      style_url <- switch(input$basemap,
+        "carto_positron" = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+        "carto_voyager" = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
+        "esri_imagery" = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json" # Use Voyager for labels
+      )
+
+      proxy %>%
+        set_style(style_url)
+
+      # For vector sandwich, we want stations below labels.
+      stations_before_id("watername_ocean")
+
+      # For Esri Imagery: Insert satellite raster layer below the vector style's features
+      if (input$basemap == "esri_imagery") {
+        session <- shiny::getDefaultReactiveDomain()
+        selected_basemap <- input$basemap
+
+        later::later(function() {
+          shiny::withReactiveDomain(session, {
+            # Race condition check
+            current_basemap <- isolate(input$basemap)
+            if (current_basemap != selected_basemap) {
+              return()
+            }
+
+            unique_suffix <- as.numeric(Sys.time()) * 1000
+            source_id <- paste0("esri_imagery_source_", unique_suffix)
+            layer_id <- paste0("esri_imagery_layer_", unique_suffix)
+
+            esri_url <- "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+
+            # Insert raster layer BELOW labels but ABOVE water polygons
+            # "watername_ocean" is the first label layer, so raster covers water but labels show on top
+            maplibre_proxy("map") %>%
+              add_raster_source(id = source_id, tiles = c(esri_url), tileSize = 256) %>%
+              add_layer(
+                id = layer_id,
+                type = "raster",
+                source = source_id,
+                paint = list("raster-opacity" = 1),
+                before_id = "watername_ocean" # Insert just below labels
+              )
+
+            current_raster_layers(c(layer_id))
+
+            # Trigger station re-render
+            style_change_trigger(isolate(style_change_trigger()) + 1)
+          })
+        }, delay = 0.5)
+      } else {
+        # Pure vector (Positron/Voyager) - trigger immediately
+        style_change_trigger(isolate(style_change_trigger()) + 1)
+      }
+    } else {
+      # RASTER LOGIC (Esri Topo only)
+      # Esri Topo uses native labels baked into the tiles
+
+      tile_url <- "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"
+
+      # Use blank style + raster layer
       blank_style <- list(
         version = 8,
         sources = list(),
-        layers = list()
+        layers = list(),
+        metadata = list(timestamp = as.numeric(Sys.time()))
       )
       json_blank <- jsonlite::toJSON(blank_style, auto_unbox = TRUE)
       blank_uri <- paste0("data:application/json,", URLencode(as.character(json_blank), reserved = TRUE))
@@ -341,32 +401,26 @@ server <- function(input, output, session) {
       proxy %>%
         set_style(blank_uri)
 
-      # Capture session for later callback
+      # Capture session and current selection for later callback
       session <- shiny::getDefaultReactiveDomain()
+      selected_basemap <- input$basemap
 
-      # Add Esri raster layer after style loads
+      # Add Raster layer after style loads
       later::later(function() {
         shiny::withReactiveDomain(session, {
-          # RACE CONDITION CHECK: Ensure basemap is STILL Esri
-          if (isolate(input$basemap) != "esri_imagery") {
-            print("Basemap changed during delay - aborting Esri load")
+          # RACE CONDITION CHECK
+          current_basemap <- isolate(input$basemap)
+          if (current_basemap != selected_basemap) {
+            print(paste("Basemap changed during delay - aborting."))
             return()
           }
 
-          # Use unique IDs to avoid "Source already exists" race conditions
           unique_suffix <- as.numeric(Sys.time()) * 1000
-          source_id <- paste0("esri_imagery_source_", unique_suffix)
-          layer_id <- paste0("esri_imagery_", unique_suffix)
-
-          # Store the ID so we can remove it later
-          current_esri_layer_id(layer_id)
+          source_id <- paste0("topo_source_", unique_suffix)
+          layer_id <- paste0("topo_layer_", unique_suffix)
 
           maplibre_proxy("map") %>%
-            add_raster_source(
-              id = source_id,
-              tiles = c("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"),
-              tileSize = 256
-            ) %>%
+            add_raster_source(id = source_id, tiles = c(tile_url), tileSize = 256) %>%
             add_layer(
               id = layer_id,
               type = "raster",
@@ -374,30 +428,58 @@ server <- function(input, output, session) {
               paint = list("raster-opacity" = 1)
             )
 
+          # For Esri Topo, stations render ON TOP of native labels
+          stations_before_id(NULL)
+          current_raster_layers(c(layer_id))
+
           # Trigger station re-render
           style_change_trigger(isolate(style_change_trigger()) + 1)
         })
       }, delay = 0.5)
-    } else {
-      # Use Carto Vector Style URLs
-      new_style <- switch(input$basemap,
-        "carto_positron" = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
-        "carto_dark_matter" = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-        "carto_voyager" = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json"
-      )
-
-      if (!is.null(new_style)) {
-        print("Setting new style...")
-        proxy %>%
-          set_style(new_style)
-
-        # Trigger re-render of stations after a short delay
-        # later::later(function() {
-        #   style_change_trigger(isolate(style_change_trigger()) + 1)
-        # }, delay = 1)
-      }
     }
   })
+
+  # Toggle Labels visibility
+  observeEvent(input$show_labels,
+    {
+      visibility <- if (input$show_labels) "visible" else "none"
+
+      # List of actual Carto label layer IDs (from positron/voyager style.json)
+      label_layers <- c(
+        # Place labels
+        "place_villages", "place_town", "place_country_2", "place_country_1",
+        "place_state", "place_continent",
+        "place_city_r6", "place_city_r5", "place_city_dot_r7", "place_city_dot_r4",
+        "place_city_dot_r2", "place_city_dot_z7",
+        "place_capital_dot_z7", "place_capital",
+        # Road labels
+        "roadname_minor", "roadname_sec", "roadname_pri", "roadname_major",
+        "motorway_name",
+        # Water labels
+        "watername_ocean", "watername_sea", "watername_lake", "watername_lake_line",
+        # POI labels
+        "poi_stadium", "poi_park", "poi_zoo",
+        # Airport
+        "airport_label"
+      )
+
+
+      print(paste("Labels toggle - visibility:", visibility))
+      proxy <- maplibre_proxy("map")
+
+      for (layer_id in label_layers) {
+        tryCatch(
+          {
+            proxy <- proxy %>% set_layout_property(layer_id, "visibility", visibility)
+          },
+          error = function(e) {
+            # Layer may not exist in current style, ignore silently
+          }
+        )
+      }
+    },
+    ignoreInit = TRUE
+  )
 
   # Render the plot title dynamically
   output$plot_title <- renderText({
