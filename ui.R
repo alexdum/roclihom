@@ -172,7 +172,10 @@ page_navbar(
                   "Carto Positron" = "carto_positron",
                   "Carto Voyager" = "carto_voyager",
                   "Esri World Topo Map" = "esri_topo",
-                  "Esri World Imagery" = "esri_imagery"
+                  "Esri World Imagery" = "esri_imagery",
+                  "Mapbox Satellite" = "mapbox_satellite",
+                  "OpenStreetMap" = "osm",
+                  "OpenStreetMap Gray" = "osm_gray"
                 ),
                 selected = "carto_positron"
               ),

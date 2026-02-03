@@ -324,15 +324,16 @@ server <- function(input, output, session) {
       current_raster_layers(character(0)) # Reset
     }
 
-    if (input$basemap %in% c("carto_positron", "carto_voyager", "esri_imagery")) {
-      # VECTOR LOGIC (Carto-based styles)
+    if (input$basemap %in% c("carto_positron", "carto_voyager", "esri_imagery", "mapbox_satellite")) {
+      # VECTOR LOGIC (Carto-based styles + Mapbox)
       # For esri_imagery, we use Voyager style but insert satellite raster below labels
       print("Setting Vector Style for Carto...")
 
       style_url <- switch(input$basemap,
         "carto_positron" = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
         "carto_voyager" = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
-        "esri_imagery" = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json" # Use Voyager for labels
+        "esri_imagery" = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json", # Use Voyager for labels
+        "mapbox_satellite" = paste0("https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12?access_token=", mapbox_token)
       )
 
       proxy %>%
@@ -383,10 +384,28 @@ server <- function(input, output, session) {
         style_change_trigger(isolate(style_change_trigger()) + 1)
       }
     } else {
-      # RASTER LOGIC (Esri Topo only)
-      # Esri Topo uses native labels baked into the tiles
+      # RASTER LOGIC (Esri Topo, OSM)
+      # These use native labels baked into the tiles
 
-      tile_url <- "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"
+      tile_url <- if (input$basemap %in% c("osm", "osm_gray")) {
+        "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+      } else {
+        # Esri Topo (esri_topo)
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"
+      }
+
+      attribution_text <- if (input$basemap %in% c("osm", "osm_gray")) {
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      } else {
+        "Tiles &copy; Esri"
+      }
+
+      # Determine paint properties (Saturation -1 for Gray style)
+      paint_props <- list("raster-opacity" = 1)
+      if (input$basemap == "osm_gray") {
+        paint_props[["raster-saturation"]] <- -0.9 # Muted but not B&W
+        paint_props[["raster-contrast"]] <- 0.3 # Add contrast
+      }
 
       # Use blank style + raster layer
       blank_style <- list(
@@ -416,19 +435,19 @@ server <- function(input, output, session) {
           }
 
           unique_suffix <- as.numeric(Sys.time()) * 1000
-          source_id <- paste0("topo_source_", unique_suffix)
-          layer_id <- paste0("topo_layer_", unique_suffix)
+          source_id <- paste0("raster_source_", unique_suffix)
+          layer_id <- paste0("raster_layer_", unique_suffix)
 
           maplibre_proxy("map") %>%
-            add_raster_source(id = source_id, tiles = c(tile_url), tileSize = 256) %>%
+            add_raster_source(id = source_id, tiles = c(tile_url), tileSize = 256, attribution = attribution_text) %>%
             add_layer(
               id = layer_id,
               type = "raster",
               source = source_id,
-              paint = list("raster-opacity" = 1)
+              paint = paint_props
             )
 
-          # For Esri Topo, stations render ON TOP of native labels
+          # For Raster maps, stations render ON TOP of native labels
           stations_before_id(NULL)
           current_raster_layers(c(layer_id))
 
@@ -460,7 +479,12 @@ server <- function(input, output, session) {
         # POI labels
         "poi_stadium", "poi_park", "poi_zoo",
         # Airport
-        "airport_label"
+        "airport_label",
+
+        # Mapbox Standard Label Layers (Satellite Streets v12)
+        "country-label", "state-label", "settlement-major-label", "settlement-minor-label",
+        "settlement-subdivision-label", "road-label", "waterway-label", "natural-point-label",
+        "poi-label", "airport-label"
       )
 
 
