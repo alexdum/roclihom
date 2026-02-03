@@ -8,26 +8,45 @@ server <- function(input, output, session) {
   # Initialize a reactive value to store the clicked or selected station ID
   selected_station_id <- reactiveVal(NULL)
 
+  # Reactive value to trigger station layer refresh after style change
+  style_change_trigger <- reactiveVal(0)
+
   # Update the selected station ID based on the dropdown selection
   observeEvent(input$stationSelect, {
+    print(paste("Dropdown Change - New Selection:", input$stationSelect))
+
     selected_station <- meta %>%
       filter(name == input$stationSelect) %>%
       pull(id)
+
+    print(paste("Dropdown Change - Resolved ID:", selected_station))
 
     selected_station_id(selected_station)
   })
 
   # Listen for click events on the map markers
-  observeEvent(input$map_marker_click, {
-    clicked_station <- input$map_marker_click$id
+  observeEvent(input$map_feature_click, {
+    clicked_data <- input$map_feature_click
+    print("Feature Click Event:")
+    print(str(clicked_data))
 
-    if (!is.null(clicked_station)) {
-      # Also update the dropdown to reflect the selected station
-      selected_station_name <- meta %>%
-        filter(id == clicked_station) %>%
-        pull(name)
+    # Check if the click was on the "stations" layer
+    # Use isTRUE to handle NULLs safely, and check for "layer" or "layer_id"
+    if (!is.null(clicked_data) && (isTRUE(clicked_data$layer_id == "stations") || isTRUE(clicked_data$layer == "stations"))) {
+      # The ID is in the properties
+      clicked_station <- clicked_data$properties$id
 
-      updateSelectInput(session, "stationSelect", selected = selected_station_name)
+      if (!is.null(clicked_station)) {
+        # Also update the dropdown to reflect the selected station
+        selected_station_name <- meta %>%
+          filter(id == clicked_station) %>%
+          pull(name)
+
+        print(paste("Map Click - Station ID:", clicked_station))
+        print(paste("Map Click - Found Name:", selected_station_name))
+
+        updateSelectInput(session, "stationSelect", selected = selected_station_name)
+      }
     }
   })
 
@@ -187,81 +206,197 @@ server <- function(input, output, session) {
     }
   )
 
-  output$map <- renderLeaflet({
-    center_lat <- 44
-    center_lng <- 25
+  output$map <- renderMaplibre({
+    print("DEBUG: renderMaplibre called - Map is initializing/re-rendering")
+    maplibre(
+      style = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json", # Base style (Positron Vector)
+      center = c(25, 44),
+      zoom = 6
+    ) %>%
+      add_navigation_control(show_compass = FALSE, visualize_pitch = FALSE)
+  })
 
-    leaflet(options = leafletOptions(minZoom = 6, maxZoom = 18)) %>%
-      addTiles(group = "OpenStreetMap") %>% # Default OpenStreetMap
-      addProviderTiles(providers$Esri.WorldTopoMap, group = "Esri World Topo Map") %>%
-      addProviderTiles(providers$Esri.WorldImagery, group = "Esri World Imagery") %>%
-      fitBounds(
-        lng1 = map_bounds$lng_min, lat1 = map_bounds$lat_min,
-        lng2 = map_bounds$lng_max, lat2 = map_bounds$lat_max
-      ) %>%
-      setMaxBounds(
-        lng1 = map_bounds$lng_min, lat1 = map_bounds$lat_min,
-        lng2 = map_bounds$lng_max, lat2 = map_bounds$lat_max
-      ) %>%
-      addLayersControl(
-        baseGroups = c("Esri World Topo Map", "OpenStreetMap", "Esri World Imagery"),
-        options = layersControlOptions(collapsed = T)
-      ) %>%
-      addResetMapButton()
+
+  # Reactive value to trigger style updates
+  style_change_trigger <- reactiveVal(0)
+
+  # Flag to track if map has been initialized
+  map_initialized <- reactiveVal(FALSE)
+
+  # Initialize map bounds only once
+  observe({
+    req(!map_initialized())
+    # Wait for map to be ready (zoom is reported)
+    req(input$map_zoom)
+
+    maplibre_proxy("map") %>%
+      fit_bounds(
+        c(map_bounds$lng_min, map_bounds$lat_min, map_bounds$lng_max, map_bounds$lat_max)
+      )
+
+    map_initialized(TRUE)
+  })
+
+  # Home Zoom Button Handler
+  observeEvent(input$home_zoom, {
+    req(map_bounds) # Ensure bounds are available
+    maplibre_proxy("map") %>%
+      fit_bounds(
+        c(map_bounds$lng_min, map_bounds$lat_min, map_bounds$lng_max, map_bounds$lat_max),
+        animate = TRUE
+      )
   })
 
   # Observe changes and update markers accordingly
+  # Also depends on input$basemap so stations are re-added after style change
   observe({
     req(filtered_data()) # Ensure that filtered_data is available
+
+    # Add dependency on style_change_trigger to re-add layer after style change
+    style_change_trigger()
+
 
     # Retrieve the current selected station ID
     selected_id <- selected_station_id()
 
-    # Define color palettes
-    color_pal <- get_color_palette(input$variable, domain = filtered_data()$multi_annual_value, reverse = FALSE)
-    color_pal2 <- get_color_palette(input$variable, domain = filtered_data()$multi_annual_value, reverse = TRUE)
+    # Prepare data for mapgl
+    # We need to add styling properties directly to the data frame for data-driven styling if strict interpolations are hard
+    # For mapgl, we can use expressions, but computing colors in R is often simpler for dynamic palettes
 
-    # Update the markers on the map
-    leafletProxy("map", data = filtered_data()) %>%
-      clearMarkers() %>%
-      addCircleMarkers(
-        lng = ~longitude,
-        lat = ~latitude,
-        label = ~ paste0(
+    map_data <- filtered_data()
+
+    # Define color palettes
+    color_pal2 <- get_color_palette(input$variable, domain = map_data$multi_annual_value, reverse = TRUE)
+
+    # Add styling columns
+    map_data <- map_data %>%
+      mutate(
+        circle_color = color_pal2(multi_annual_value),
+        circle_radius = ifelse(id == selected_id, 8, 5),
+        circle_stroke_color = ifelse(id == selected_id, "#FF0000", "#00000000"),
+        circle_stroke_width = ifelse(id == selected_id, 2, 1),
+        # Sort to ensure selected is on top (if needed, though circle_sort_key might be used if fully supported, otherwise robust ordering in data usually works)
+        is_selected = ifelse(id == selected_id, 1, 0),
+        popup_content = paste0(
           "<strong>Name: </strong>", name,
           "<br><strong>", input$variable, ": </strong>", round(multi_annual_value, 1),
           "<br><span style='color:red;'>click to update</span>"
-        ) %>% lapply(htmltools::HTML), # Ensure HTML format for label
-        radius = ~ ifelse(id == selected_id, 8, 5), # Larger radius for selected station
-        # color = ~ifelse(id == selected_id, "#808080", color_pal2(multi_annual_value)),  # Different color for selected
-        # Border color (stroke) changes when selected, otherwise it's transparent or a default value
-        color = ~ ifelse(id == selected_id, "#FF0000", "#00000000"), # Red border for selected, transparent for others
-
-        # Inside color stays the same for all, based on the color palette
-        fillColor = ~ color_pal2(multi_annual_value),
-        stroke = ~ ifelse(id == selected_id, TRUE, FALSE), # Add a border stroke for selected
-        weight = ~ ifelse(id == selected_id, 2, 1), # Thicker border for selected
-        fillOpacity = 0.9, # Increased opacity for better visibility
-        layerId = ~id # Ensure layerId is set for interactivity
+        )
       ) %>%
-      # addLabelOnlyMarkers(
-      #   lng = ~longitude[selected_id == id],
-      #   lat = ~latitude[selected_id == id],
-      #   label = ~paste0(
-      #     "<strong>Name: </strong>", name[selected_id == id],
-      #     "<br><strong>", input$variable, ": </strong>", round(multi_annual_value[selected_id == id], 1)
-      #   ) %>% lapply(htmltools::HTML),  # Ensure HTML format for label
-      #   labelOptions = labelOptions(noHide = TRUE, direction = 'auto')
-      # ) %>%
-      clearControls() %>%
-      addLegend(
-        "bottomright",
-        pal = color_pal,
-        values = ~multi_annual_value,
-        title = input$variable,
-        opacity = 0.7,
-        labFormat = labelFormat(transform = function(x) sort(x, decreasing = TRUE))
+      arrange(is_selected) %>%
+      st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
+
+    # Apply to map
+    maplibre_proxy("map") %>%
+      clear_layer("stations") %>% # Remove existing layer if any
+      add_circle_layer(
+        id = "stations",
+        source = map_data,
+        circle_color = get_column("circle_color"),
+        circle_radius = get_column("circle_radius"),
+        circle_stroke_color = get_column("circle_stroke_color"),
+        circle_stroke_width = get_column("circle_stroke_width"),
+        circle_opacity = 0.9,
+        # Create a tooltip for hover
+        tooltip = get_column("popup_content")
       )
+  })
+
+  # Track the current active Esri layer ID
+  current_esri_layer_id <- reactiveVal(NULL)
+
+  # Observe changes in the basemap selection and update the map style
+  observeEvent(input$basemap, {
+    print(paste("Basemap Change - Selection:", input$basemap))
+
+    proxy <- maplibre_proxy("map")
+
+    # Clean up any existing Esri layer if it exists
+    active_esri_id <- current_esri_layer_id()
+    if (!is.null(active_esri_id)) {
+      print(paste("Cleaning up existing Esri layer:", active_esri_id))
+      # Attempt to remove the layer. Note: The source might linger but won't be visible.
+      # mapgl doesn't have a direct 'remove_source', but clearing the layer is key.
+      tryCatch(
+        {
+          proxy %>% clear_layer(active_esri_id)
+        },
+        error = function(e) {
+          print(paste("Error clearing Esri layer:", e$message))
+        }
+      )
+      current_esri_layer_id(NULL)
+    }
+
+    if (input$basemap == "esri_imagery") {
+      # For Esri, set a blank style first, then add raster layer dynamically
+      blank_style <- list(
+        version = 8,
+        sources = list(),
+        layers = list()
+      )
+      json_blank <- jsonlite::toJSON(blank_style, auto_unbox = TRUE)
+      blank_uri <- paste0("data:application/json,", URLencode(as.character(json_blank), reserved = TRUE))
+
+      proxy %>%
+        set_style(blank_uri)
+
+      # Capture session for later callback
+      session <- shiny::getDefaultReactiveDomain()
+
+      # Add Esri raster layer after style loads
+      later::later(function() {
+        shiny::withReactiveDomain(session, {
+          # RACE CONDITION CHECK: Ensure basemap is STILL Esri
+          if (isolate(input$basemap) != "esri_imagery") {
+            print("Basemap changed during delay - aborting Esri load")
+            return()
+          }
+
+          # Use unique IDs to avoid "Source already exists" race conditions
+          unique_suffix <- as.numeric(Sys.time()) * 1000
+          source_id <- paste0("esri_imagery_source_", unique_suffix)
+          layer_id <- paste0("esri_imagery_", unique_suffix)
+
+          # Store the ID so we can remove it later
+          current_esri_layer_id(layer_id)
+
+          maplibre_proxy("map") %>%
+            add_raster_source(
+              id = source_id,
+              tiles = c("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"),
+              tileSize = 256
+            ) %>%
+            add_layer(
+              id = layer_id,
+              type = "raster",
+              source = source_id,
+              paint = list("raster-opacity" = 1)
+            )
+
+          # Trigger station re-render
+          style_change_trigger(isolate(style_change_trigger()) + 1)
+        })
+      }, delay = 0.5)
+    } else {
+      # Use Carto Vector Style URLs
+      new_style <- switch(input$basemap,
+        "carto_positron" = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+        "carto_dark_matter" = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+        "carto_voyager" = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json"
+      )
+
+      if (!is.null(new_style)) {
+        print("Setting new style...")
+        proxy %>%
+          set_style(new_style)
+
+        # Trigger re-render of stations after a short delay
+        # later::later(function() {
+        #   style_change_trigger(isolate(style_change_trigger()) + 1)
+        # }, delay = 1)
+      }
+    }
   })
 
   # Render the plot title dynamically

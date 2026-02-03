@@ -2,9 +2,9 @@
 get_color_palette <- function(variable, domain, reverse = FALSE) {
   if (variable %in% c("Tavg", "Tmax", "Tmin")) {
     # Use the RdYlBu palette for temperature variables
-    colorNumeric(palette = "RdYlBu", domain = domain, reverse = reverse)
+    scales::col_numeric(palette = "RdYlBu", domain = domain, reverse = reverse)
   } else {
     # Use the viridis palette for other variables like PREC
-    colorNumeric(palette = "viridis", domain = domain, reverse = reverse)
+    scales::col_numeric(palette = "viridis", domain = domain, reverse = reverse)
   }
 }

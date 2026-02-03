@@ -6,8 +6,8 @@ WORKDIR /code
 RUN install2.r --error \
     ggplot2 \
     shiny \
-    leaflet \
-    leaflet.extras \
+    mapgl \
+    sf \
     arrow \
     dplyr \
     plotly \

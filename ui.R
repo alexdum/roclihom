@@ -17,6 +17,49 @@ page_navbar(
           }
         });
       });
+    ")),
+    tags$style(HTML("
+      /* Collapsible Map Control Styling */
+      .map-layer-control {
+        background-color: white;
+        border-radius: 4px;
+        box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        padding: 5px;
+        width: 36px;
+        height: 36px;
+        overflow: hidden;
+        transition: width 0.3s ease, height 0.3s ease;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+      }
+      .map-layer-control:hover {
+        width: 200px;
+        height: auto;
+        padding: 10px;
+      }
+      .control-icon {
+        width: 26px;
+        height: 26px;
+        text-align: center;
+        margin-bottom: 5px;
+        font-size: 18px;
+        color: #333;
+        flex-shrink: 0;
+      }
+      .control-content {
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        margin-top: 5px;
+        white-space: nowrap; /* Prevent wrapping during transition */
+      }
+      .map-layer-control:hover .control-content {
+        opacity: 1;
+        white-space: normal;
+      }
+      .map-layer-control:hover .control-icon {
+        display: none !important;
+      }
     "))
   ),
   fillable_mobile = T,
@@ -65,6 +108,7 @@ page_navbar(
           selected = "Monthly"
         ),
 
+
         # Select input for the month (only shown for monthly aggregation)
         conditionalPanel(
           condition = "input.aggregation == 'Monthly'",
@@ -94,7 +138,40 @@ page_navbar(
       card(
         full_screen = TRUE,
         card_header(h6(textOutput("map_title"))),
-        leafletOutput("map", height = "300px"),
+        div(
+          style = "position: relative;",
+          maplibreOutput("map", height = "400px"),
+          absolutePanel(
+            top = 130, right = 10,
+            class = "map-layer-control",
+            style = "z-index: 1000;",
+            div(class = "control-icon", icon("layer-group")),
+            div(
+              class = "control-content",
+              radioButtons(
+                inputId = "basemap",
+                label = "Basemap",
+                choices = c(
+                  "Carto Positron" = "carto_positron",
+                  "Carto Dark Matter" = "carto_dark_matter",
+                  "Carto Voyager" = "carto_voyager",
+                  "Esri Imagery" = "esri_imagery"
+                ),
+                selected = "carto_positron"
+              )
+            )
+          ),
+          absolutePanel(
+            top = 80, right = 10,
+            style = "z-index: 1000;",
+            actionButton(
+              inputId = "home_zoom",
+              label = NULL,
+              icon = icon("house"),
+              style = "background-color: white; border: none; border-radius: 4px; box-shadow: 0 0 5px rgba(0,0,0,0.3); width: 36px; height: 36px; padding: 0; color: #333;"
+            )
+          )
+        ),
         div(
           class = "d-flex justify-content-between align-items-center gap-2 flex-wrap",
           h6(textOutput("plot_title"), class = "mb-0"),
