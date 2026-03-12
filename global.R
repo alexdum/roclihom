@@ -19,6 +19,7 @@ source("utils/data_processing.R", local = T)
 mapbox_token <- "pk.REPLACE_WITH_YOUR_TOKEN"
 
 
+
 # Load the meta data
 meta <- read_parquet("www/data/tabs/roclihom_meta_1901_2023.parquet")
 
