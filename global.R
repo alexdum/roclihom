@@ -15,9 +15,9 @@ library(markdown)
 source("utils/get_color_palette.R", local = T)
 source("utils/data_processing.R", local = T)
 
+
 # Mapbox Token (User must replace this with their valid token)
 mapbox_token <- "pk.REPLACE_WITH_YOUR_TOKEN"
-
 
 
 # Load the meta data
