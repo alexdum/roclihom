@@ -2,6 +2,8 @@
 
 RoCliHom is an interactive web application for exploring long-term homogenized air temperature and precipitation datasets in Romania.
 
+**Explore the App Online**: [https://alexdum-roclihom.share.connect.posit.cloud/](https://alexdum-roclihom.share.connect.posit.cloud/)
+
 ## Data Source
 
 The application uses the **RoCliHom** dataset, which is publicly available on Zenodo:
