@@ -19,6 +19,14 @@ source("utils/data_processing.R", local = T)
 # Mapbox Token (User must replace this with their valid token)
 mapbox_token <- "pk.REPLACE_WITH_YOUR_TOKEN"
 
+# OpenFreeMap Style URLs
+ofm_positron_style <- "https://tiles.openfreemap.org/styles/positron"
+ofm_bright_style <- "https://tiles.openfreemap.org/styles/bright"
+
+# EOX Sentinel-2 Cloudless (Free for commercial use with attribution)
+sentinel_url <- "https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2023_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg"
+sentinel_attribution <- '<a href="https://s2maps.eu" target="_blank">Sentinel-2 cloudless - by EOX IT Services GmbH</a> (Contains modified Copernicus Sentinel data 2023)'
+
 
 # Load the meta data
 meta <- read_parquet("www/data/tabs/roclihom_meta_1901_2023.parquet")

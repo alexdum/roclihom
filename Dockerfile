@@ -21,7 +21,8 @@ RUN install2.r --error \
     seas \
     tidyr \
     markdown\
-    bsicons
+    bsicons \
+    remotes
 
 # Install development packages from GitHub
 RUN installGithub.r \

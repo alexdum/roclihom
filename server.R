@@ -209,12 +209,65 @@ server <- function(input, output, session) {
   output$map <- renderMaplibre({
     print("DEBUG: renderMaplibre called - Map is initializing/re-rendering")
     maplibre(
-      style = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json", # Base style (Positron Vector)
+      style = ofm_positron_style, # Base style (OpenFreeMap Positron)
       center = c(25, 44),
       zoom = 6
     ) %>%
       add_navigation_control(show_compass = FALSE, visualize_pitch = FALSE, position = "top-left")
   })
+
+  # --- Basemap Management (Synced from ghcnm) ---
+  label_layer_ids <- c(
+    # OpenFreeMap Positron & Bright common labels
+    "waterway_line_label", "water_name_point_label", "water_name_line_label",
+    "highway-name-path", "highway-name-minor", "highway-name-major",
+    "highway-shield-non-us", "highway-shield-us-interstate", "road_shield_us",
+    "airport", "label_other", "label_village", "label_town", "label_state",
+    "label_city", "label_city_capital", "label_country_3", "label_country_2", "label_country_1",
+    # Bright specific labels (POIs & Directions)
+    "road_oneway", "road_oneway_opposite", "poi_r20", "poi_r7", "poi_r1", "poi_transit",
+    # Dash variants
+    "waterway-line-label", "water-name-point-label", "water-name-line-label",
+    "highway-shield-non-us", "highway-shield-us-interstate", "road-shield-us",
+    "label-other", "label-village", "label-town", "label-state",
+    "label-city", "label-city-capital", "label-country-3", "label-country-2", "label-country-1",
+    # Legacy/Carto/OSM
+    "place_villages", "place_town", "place_country_2", "place_country_1",
+    "place_state", "place_continent", "place_city_r6", "place_city_r5",
+    "place_city_dot_r7", "place_city_dot_r4", "place_city_dot_r2", "place_city_dot_z7",
+    "place_capital_dot_z7", "place_capital", "roadname_minor", "roadname_sec",
+    "roadname_pri", "roadname_major", "motorway_name", "watername_ocean",
+    "watername_sea", "watername_lake", "watername_lake_line", "poi_stadium",
+    "poi_park", "poi_zoo", "airport_label", "country-label", "state-label",
+    "settlement-major-label", "settlement-minor-label", "settlement-subdivision-label",
+    "road-label", "waterway-label", "natural-point-label", "poi-label", "airport-label"
+  )
+
+  non_label_layer_ids <- c(
+    "background", "park", "water", "landcover_ice_shelf", "landcover_glacier",
+    "landuse_residential", "landcover_wood", "waterway", "building",
+    "tunnel_motorway_casing", "tunnel_motorway_inner", "aeroway-taxiway",
+    "aeroway-runway-casing", "aeroway-area", "aeroway-runway",
+    "road_area_pier", "road_pier", "highway_path", "highway_minor",
+    "highway_major_casing", "highway_major_inner", "highway_major_subtle",
+    "highway_motorway_casing", "highway_motorway_inner", "highway_motorway_subtle",
+    "railway_transit", "railway_transit_dashline", "railway_service",
+    "railway_service_dashline", "railway", "railway_dashline",
+    "highway_motorway_bridge_casing", "highway_motorway_bridge_inner",
+    "boundary_3", "boundary_2", "boundary_disputed"
+  )
+
+  apply_label_visibility <- function(proxy, show_labels) {
+    visibility <- if (isTRUE(show_labels)) "visible" else "none"
+    for (layer_id in label_layer_ids) {
+      tryCatch(
+        {
+          proxy %>% set_layout_property(layer_id, "visibility", visibility)
+        },
+        error = function(e) {}
+      )
+    }
+  }
 
 
   # Reactive value to trigger style updates
@@ -324,134 +377,62 @@ server <- function(input, output, session) {
       current_raster_layers(character(0)) # Reset
     }
 
-    if (input$basemap %in% c("carto_positron", "carto_voyager", "esri_imagery", "mapbox_satellite")) {
-      # VECTOR LOGIC (Carto-based styles + Mapbox)
-      # For esri_imagery, we use Voyager style but insert satellite raster below labels
-      print("Setting Vector Style for Carto...")
+    if (input$basemap %in% c("ofm_positron", "ofm_bright")) {
+      # VECTOR LOGIC (OpenFreeMap)
+      style_url <- if (input$basemap == "ofm_positron") ofm_positron_style else ofm_bright_style
 
-      style_url <- switch(input$basemap,
-        "carto_positron" = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
-        "carto_voyager" = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
-        "esri_imagery" = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json", # Use Voyager for labels
-        "mapbox_satellite" = paste0("https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12?access_token=", mapbox_token)
-      )
+      proxy %>% set_style(style_url, preserve_layers = FALSE)
+      stations_before_id("waterway_line_label")
 
-      proxy %>%
-        set_style(style_url)
-
-      # For vector sandwich, we want stations below labels.
-      stations_before_id("watername_ocean")
-
-      # For Esri Imagery: Insert satellite raster layer below the vector style's features
-      if (input$basemap == "esri_imagery") {
-        session <- shiny::getDefaultReactiveDomain()
-        selected_basemap <- input$basemap
-
-        later::later(function() {
-          shiny::withReactiveDomain(session, {
-            # Race condition check
-            current_basemap <- isolate(input$basemap)
-            if (current_basemap != selected_basemap) {
-              return()
-            }
-
-            unique_suffix <- as.numeric(Sys.time()) * 1000
-            source_id <- paste0("esri_imagery_source_", unique_suffix)
-            layer_id <- paste0("esri_imagery_layer_", unique_suffix)
-
-            esri_url <- "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-
-            # Insert raster layer BELOW labels but ABOVE water polygons
-            # "watername_ocean" is the first label layer, so raster covers water but labels show on top
-            maplibre_proxy("map") %>%
-              add_raster_source(id = source_id, tiles = c(esri_url), tileSize = 256) %>%
-              add_layer(
-                id = layer_id,
-                type = "raster",
-                source = source_id,
-                paint = list("raster-opacity" = 1),
-                before_id = "watername_ocean" # Insert just below labels
-              )
-
-            current_raster_layers(c(layer_id))
-
-            # Trigger station re-render
-            style_change_trigger(isolate(style_change_trigger()) + 1)
-          })
-        }, delay = 0.5)
-      } else {
-        # Pure vector (Positron/Voyager) - trigger immediately
-        style_change_trigger(isolate(style_change_trigger()) + 1)
-      }
-    } else {
-      # RASTER LOGIC (Esri Topo, OSM)
-      # These use native labels baked into the tiles
-
-      tile_url <- if (input$basemap %in% c("osm", "osm_gray")) {
-        "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-      } else {
-        # Esri Topo (esri_topo)
-        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"
-      }
-
-      attribution_text <- if (input$basemap %in% c("osm", "osm_gray")) {
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      } else {
-        "Tiles &copy; Esri"
-      }
-
-      # Determine paint properties (Saturation -1 for Gray style)
-      paint_props <- list("raster-opacity" = 1)
-      if (input$basemap == "osm_gray") {
-        paint_props[["raster-saturation"]] <- -0.9 # Muted but not B&W
-        paint_props[["raster-contrast"]] <- 0.3 # Add contrast
-      }
-
-      # Use blank style + raster layer
-      blank_style <- list(
-        version = 8,
-        sources = list(),
-        layers = list(),
-        metadata = list(timestamp = as.numeric(Sys.time()))
-      )
-      json_blank <- jsonlite::toJSON(blank_style, auto_unbox = TRUE)
-      blank_uri <- paste0("data:application/json,", URLencode(as.character(json_blank), reserved = TRUE))
-
-      proxy %>%
-        set_style(blank_uri)
-
-      # Capture session and current selection for later callback
-      session <- shiny::getDefaultReactiveDomain()
+      current_session <- shiny::getDefaultReactiveDomain()
       selected_basemap <- input$basemap
 
-      # Add Raster layer after style loads
       later::later(function() {
-        shiny::withReactiveDomain(session, {
-          # RACE CONDITION CHECK
+        shiny::withReactiveDomain(current_session, {
           current_basemap <- isolate(input$basemap)
           if (current_basemap != selected_basemap) {
-            print(paste("Basemap changed during delay - aborting."))
+            return()
+          }
+          apply_label_visibility(maplibre_proxy("map"), isolate(input$show_labels))
+          style_change_trigger(isolate(style_change_trigger()) + 1)
+        })
+      }, delay = 0.35)
+    } else if (input$basemap == "esri_imagery") {
+      # SATELLITE LOGIC (Esri Imagery under Positron Labels)
+      proxy %>% set_style(ofm_positron_style, preserve_layers = FALSE)
+
+      current_session <- shiny::getDefaultReactiveDomain()
+      selected_basemap <- input$basemap
+
+      later::later(function() {
+        shiny::withReactiveDomain(current_session, {
+          current_basemap <- isolate(input$basemap)
+          if (current_basemap != selected_basemap) {
             return()
           }
 
           unique_suffix <- as.numeric(Sys.time()) * 1000
-          source_id <- paste0("raster_source_", unique_suffix)
-          layer_id <- paste0("raster_layer_", unique_suffix)
+          source_id <- paste0("esri_source_", unique_suffix)
+          layer_id <- paste0("esri_layer_", unique_suffix)
+          esri_url <- "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
 
           maplibre_proxy("map") %>%
-            add_raster_source(id = source_id, tiles = c(tile_url), tileSize = 256, attribution = attribution_text) %>%
-            add_layer(
-              id = layer_id,
-              type = "raster",
-              source = source_id,
-              paint = paint_props
+            add_raster_source(id = source_id, tiles = c(esri_url), tileSize = 256, attribution = "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community") %>%
+            add_layer(id = layer_id, type = "raster", source = source_id, paint = list("raster-opacity" = 1), before_id = "background")
+
+          # Hide vector background/land layers to show satellite
+          for (layer_id_kill in non_label_layer_ids) {
+            tryCatch(
+              {
+                maplibre_proxy("map") %>% set_layout_property(layer_id_kill, "visibility", "none")
+              },
+              error = function(e) {}
             )
+          }
 
-          # For Raster maps, stations render ON TOP of native labels
-          stations_before_id(NULL)
+          apply_label_visibility(maplibre_proxy("map"), isolate(input$show_labels))
+          stations_before_id("waterway_line_label")
           current_raster_layers(c(layer_id))
-
-          # Trigger station re-render
           style_change_trigger(isolate(style_change_trigger()) + 1)
         })
       }, delay = 0.5)
@@ -459,51 +440,10 @@ server <- function(input, output, session) {
   })
 
   # Toggle Labels visibility
-  observeEvent(input$show_labels,
-    {
-      visibility <- if (input$show_labels) "visible" else "none"
-
-      # List of actual Carto label layer IDs (from positron/voyager style.json)
-      label_layers <- c(
-        # Place labels
-        "place_villages", "place_town", "place_country_2", "place_country_1",
-        "place_state", "place_continent",
-        "place_city_r6", "place_city_r5", "place_city_dot_r7", "place_city_dot_r4",
-        "place_city_dot_r2", "place_city_dot_z7",
-        "place_capital_dot_z7", "place_capital",
-        # Road labels
-        "roadname_minor", "roadname_sec", "roadname_pri", "roadname_major",
-        "motorway_name",
-        # Water labels
-        "watername_ocean", "watername_sea", "watername_lake", "watername_lake_line",
-        # POI labels
-        "poi_stadium", "poi_park", "poi_zoo",
-        # Airport
-        "airport_label",
-
-        # Mapbox Standard Label Layers (Satellite Streets v12)
-        "country-label", "state-label", "settlement-major-label", "settlement-minor-label",
-        "settlement-subdivision-label", "road-label", "waterway-label", "natural-point-label",
-        "poi-label", "airport-label"
-      )
-
-
-      print(paste("Labels toggle - visibility:", visibility))
-      proxy <- maplibre_proxy("map")
-
-      for (layer_id in label_layers) {
-        tryCatch(
-          {
-            proxy <- proxy %>% set_layout_property(layer_id, "visibility", visibility)
-          },
-          error = function(e) {
-            # Layer may not exist in current style, ignore silently
-          }
-        )
-      }
-    },
-    ignoreInit = TRUE
-  )
+  observeEvent(input$show_labels, {
+    req(input$basemap %in% c("ofm_positron", "ofm_bright", "esri_imagery"))
+    apply_label_visibility(maplibre_proxy("map"), input$show_labels)
+  })
 
   # Render the plot title dynamically
   output$plot_title <- renderText({
